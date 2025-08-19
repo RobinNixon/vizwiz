@@ -41,18 +41,19 @@ VizWiz uses a plugin architecture that makes adding new visualizers incredibly s
 
 1. **Read the Guide** - Check `vizwiz.txt` for the complete visualizer development guide
 2. **Create Your Plugin** - Follow the template and interface requirements
-2. **Save the Pluigin** - Save using the file convention vizname.viz.js
+2. **Save the Plugin** - Save using the file convention: `vizname.viz.js`
 4. **Register & Go** - Your visualizer automatically appears in the dropdown after adding to the HTML
 
-Provide vizwiz.txt and one of the visualizer files to an AI (eg plasma.viz.js), along with a description of the effects and features you want, to have it make one for you. Then save it in the vizwiz folder.
+Provide `vizwiz.txt` and one of the visualizer files to an AI (eg `plasma.viz.js`), along with a description of the effects and features you want, to have it make one for you. Then save it in the *vizwiz* folder.
 
 **Example registration:**
 
-At the end if the index.html filer add the line:
+At the end of the index.html filer add the line:
 
+```javascript
 <script src='vizname.viz.js'></script>
-
-Make sure you aor your AI have added the following at the end of the visualizer file to register it:
+```
+Make sure you ar your AI have added the following at the end of the visualizer file to register it:
 ```javascript
 // At the end of your myawesome.viz.js file
 if (window.VisualizerRegistry) {
@@ -67,11 +68,11 @@ vizwiz/
 ├── vizwiz.js             # Core engine
 ├── vizwiz.css            # Styling
 ├── vizwiz.txt            # Visualizer development guide
-├── bars.viz.js           # Vertical Bars visualizer     (Claude Sonnet 4)
-├── plasma.viz.js         # Plasma FLow visualizer       (Claude Sonnet 4)
-├── kaleidoscope.viz.js   # Kaleidoscope visualizer      (Claude Sonnet 4)
-├── oscilloscope.viz.js   # Oscilloscope visualizer      (ChatGPT 5)
-├── blobs.viz.js          # Oscilloscope visualizer      (Deepseek R1)
+├── bars.viz.js           # Vertical Bars visualizer      (Claude Sonnet 4)
+├── plasma.viz.js         # Plasma FLow visualizer        (Claude Sonnet 4)
+├── kaleidoscope.viz.js   # Kaleidoscope visualizer       (Claude Sonnet 4)
+├── oscilloscope.viz.js   # Oscilloscope visualizer       (ChatGPT 5)
+├── blobs.viz.js          # Oscilloscope visualizer       (Deepseek R1)
 └── README.md             # This file
 ```
 
@@ -88,9 +89,7 @@ vizwiz/
 
 This project is licensed under the MIT License
 
----
-
-### 🚀 Quick Links
+## 🚀 Quick Links
 - [📖 Visualizer Development Guide](vizwiz.txt)
 - [🐛 Report Issues](https://github.com/RobinNixon/vizwiz/issues)
 - [💡 Feature Requests](https://github.com/RobinNixon/vizwiz/discussions)
