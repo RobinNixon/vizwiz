@@ -67,8 +67,8 @@ setSetting(key, value)
   - Implement switch statement to handle each setting key
   - Update internal properties and rebuild if needed
 
-MUTATION SYSTEM (OPTIONAL):
-============================
+MUTATION SYSTEM
+===============
 
 static getMutationSettings()
   - Return object describing which settings can be mutated
@@ -78,22 +78,21 @@ static getMutationSettings()
   - range: {min, max} for numeric ranges, optional step for rounding
 
 mutateSettings()
-  - Called periodically when mutation mode is enabled
-  - Use getMutationSettings() to randomly change properties
-  - Call updateUIControl(key, value, true) to update UI with highlight
+  - Just call window.VisualizerRegistry.applyMutations(this)
+  - The registry handles all mutation logic and UI updates automatically
 
 updateUIControl(key, newValue, highlight = false)
-  - Update UI control to show current value
-  - highlight: true to show mutation visual feedback
+  - Just call window.VisualizerRegistry.updateUIControl(this, key, newValue, highlight)
+  - Automatically handles number formatting and UI updates
+
+resetVisualizerSettings()
+  - Just call window.VisualizerRegistry.resetToDefaults(this)
+  - Resets all settings and updates UI controls
 
 highlightMutatedControl(element, key)
   - Add visual feedback when setting is mutated
   - Creates brief flash and dice emoji indicator
-
-resetVisualizerSettings()
-  - Reset all settings to defaults
-  - Update UI controls to match
-  - Disable mutation mode
+  - This method still needs to be implemented in each visualizer
 
 REQUIRED PROPERTIES:
 ====================
@@ -145,6 +144,9 @@ class SimpleVisualizer {
         this.canvas = null;
         this.elements = null;
         this.color = '#ff0000';
+        this.mutationEnabled = false;
+        this.mutationTimer = 0;
+        this.mutationInterval = 200;
     }
 
     init(elements) {
@@ -171,6 +173,16 @@ class SimpleVisualizer {
         this.animationId = requestAnimationFrame(() => this.animate());
         if (this.analyser && this.dataArray) {
             this.analyser.getByteFrequencyData(this.dataArray);
+            
+            // Handle mutations (simplified!)
+            if (this.mutationEnabled) {
+                this.mutationTimer++;
+                if (this.mutationTimer >= this.mutationInterval) {
+                    this.mutateSettings();
+                    this.mutationTimer = 0;
+                }
+            }
+            
             this.render();
         }
     }
@@ -205,22 +217,94 @@ class SimpleVisualizer {
                         { value: '#0000ff', label: 'Blue' }
                     ],
                     default: '#ff0000'
+                },
+                mutateMode: {
+                    type: 'checkbox',
+                    label: 'Mutate Colors',
+                    default: false
                 }
             }
         };
     }
 
-    setSetting(key, value) {
-        if (key === 'color') this.color = value;
+    static getMutationSettings() {
+        return {
+            color: {
+                probability: 0.6,
+                values: ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff']
+            }
+        };
     }
 
-    // ... implement other required methods ...
+    setSetting(key, value) {
+        if (key === 'color') {
+            this.color = value;
+        }
+    }
+
+    // Just delegate to the registry!
+    mutateSettings() {
+        window.VisualizerRegistry.applyMutations(this);
+    }
+
+    updateUIControl(key, newValue, highlight = false) {
+        window.VisualizerRegistry.updateUIControl(this, key, newValue, highlight);
+    }
+
+    resetVisualizerSettings() {
+        window.VisualizerRegistry.resetToDefaults(this);
+    }
+
+    // Still need to implement this for visual feedback
+    highlightMutatedControl(element, key) {
+        const settingItem = element.closest('.setting-item');
+        if (!settingItem) return;
+        
+        settingItem.style.background = 'rgba(99, 102, 241, 0.3)';
+        settingItem.style.borderRadius = '4px';
+        settingItem.style.transition = 'all 0.3s ease';
+        
+        setTimeout(() => {
+            settingItem.style.background = '';
+        }, 1000);
+    }
+
+    // Standard settings UI methods (copy from existing visualizers)
+    buildVisualizerSettings() { /* ... */ }
+    createSettingItem(key, setting) { /* ... */ }
+    toggleSettings() { /* ... */ }
+    closeSettings() { /* ... */ }
+    onCanvasResize(width, height) { /* ... */ }
 }
 
 // Register the visualizer
 if (window.VisualizerRegistry) {
     window.VisualizerRegistry.register('simple', 'Simple Circle', SimpleVisualizer);
 }
+
+AVAILABLE UTILITIES:
+====================
+
+The VisualizerRegistry provides these utilities to simplify development:
+
+window.VisualizerRegistry.cleanValue(value, step)
+  - Automatically rounds floating point numbers to appropriate precision
+  - Based on the step value from settings schema
+
+window.VisualizerRegistry.updateUIControl(visualizer, key, newValue, highlight)
+  - Updates UI controls with properly formatted values
+  - Handles range sliders, checkboxes, and select elements
+  - Automatically applies number cleaning for range inputs
+
+window.VisualizerRegistry.applyMutations(visualizer)
+  - Applies random mutations based on getMutationSettings()
+  - Automatically updates UI controls with visual feedback
+  - Handles all the mutation logic and logging
+
+window.VisualizerRegistry.resetToDefaults(visualizer)
+  - Resets all settings to their default values
+  - Updates all UI controls to match
+  - Disables mutation mode
 
 TIPS:
 =====
@@ -233,3 +317,5 @@ TIPS:
 - Test on different screen sizes and audio types
 - Use ctx.save() and ctx.restore() for complex transformations
 - Consider performance - avoid creating objects in animation loops
+- Take advantage of the centralized utilities to reduce boilerplate code
+- Number formatting and UI updates are handled automatically by the registry

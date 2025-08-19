@@ -562,62 +562,11 @@ class KaleidoscopeVisualizer {
     }
     
     mutateSettings() {
-        const mutations = [];
-        const mutationSettings = this.constructor.getMutationSettings();
-        
-        Object.entries(mutationSettings).forEach(([key, config]) => {
-            if (Math.random() < config.probability) {
-                let newValue;
-                
-                if (config.values) {
-                    newValue = config.values[Math.floor(Math.random() * config.values.length)];
-                } else if (config.range) {
-                    newValue = config.range.min + Math.random() * (config.range.max - config.range.min);
-                    if (config.step) {
-                        newValue = Math.round(newValue / config.step) * config.step;
-                    }
-                }
-                
-                mutations.push({
-                    key: key,
-                    value: newValue,
-                    apply: () => {
-                        this.setSetting(key, newValue);
-                        this.updateUIControl(key, newValue, true);
-                    }
-                });
-            }
-        });
-        
-        mutations.forEach(mutation => mutation.apply());
-        
-        if (mutations.length > 0) {
-            console.log(`Applied ${mutations.length} kaleidoscope mutations:`, mutations.map(m => `${m.key}=${m.value}`).join(', '));
-        }
+        window.VisualizerRegistry.applyMutations(this);
     }
-    
+
     updateUIControl(key, newValue, highlight = false) {
-        const element = document.getElementById(key);
-        if (!element) return;
-        
-        if (element.type === 'range') {
-            element.value = newValue;
-            const valueElement = document.getElementById(key + 'Value');
-            if (valueElement) {
-                const schema = this.constructor.getSettingsSchema();
-                const setting = schema.settings[key];
-                const displayValue = setting.unit ? newValue + setting.unit : newValue;
-                valueElement.textContent = displayValue;
-            }
-        } else if (element.type === 'checkbox') {
-            element.checked = newValue;
-        } else if (element.tagName === 'SELECT') {
-            element.value = newValue;
-        }
-        
-        if (highlight) {
-            this.highlightMutatedControl(element, key);
-        }
+        window.VisualizerRegistry.updateUIControl(this, key, newValue, highlight);
     }
     
     highlightMutatedControl(element, key) {
@@ -661,36 +610,7 @@ class KaleidoscopeVisualizer {
     }
     
     resetVisualizerSettings() {
-        this.mutationEnabled = false;
-        this.mutationTimer = 0;
-        
-        const schema = this.constructor.getSettingsSchema();
-        if (schema) {
-            Object.entries(schema.settings).forEach(([key, setting]) => {
-                if (key === 'mutateMode') {
-                    this.mutationEnabled = setting.default;
-                }
-                
-                this.setSetting(key, setting.default);
-                
-                const element = document.getElementById(key);
-                if (element) {
-                    if (element.type === 'range') {
-                        element.value = setting.default;
-                        const valueElement = document.getElementById(key + 'Value');
-                        if (valueElement) {
-                            valueElement.textContent = setting.default + (setting.unit || '');
-                        }
-                    } else if (element.type === 'checkbox') {
-                        element.checked = setting.default;
-                    } else if (element.tagName === 'SELECT') {
-                        element.value = setting.default;
-                    }
-                }
-            });
-        }
-        
-        console.log('Kaleidoscope settings reset to defaults');
+        window.VisualizerRegistry.resetToDefaults(this);
     }
     
     toggleSettings() {

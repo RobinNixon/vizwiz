@@ -475,34 +475,134 @@ window.VisualizerRegistry = {
     
     get(id) {
         return this.visualizers.find(v => v.id === id);
+    },
+    
+    // === SHARED UTILITIES FOR ALL VISUALIZERS ===
+    
+    /**
+     * Clean floating point numbers for UI display based on step precision
+     */
+    cleanValue(value, step) {
+        if (!step || step >= 1) return Math.round(value);
+        
+        const decimals = Math.max(0, -Math.floor(Math.log10(step)));
+        return parseFloat(value.toFixed(decimals));
+    },
+    
+    /**
+     * Update a UI control with proper value formatting
+     */
+    updateUIControl(visualizer, key, newValue, highlight = false) {
+        const element = document.getElementById(key);
+        if (!element) return;
+        
+        const schema = visualizer.constructor.getSettingsSchema();
+        const setting = schema.settings[key];
+        
+        // Clean the value for display
+        let displayValue = newValue;
+        if (setting && setting.step && typeof newValue === 'number') {
+            displayValue = this.cleanValue(newValue, setting.step);
+        }
+        
+        // Update the control value
+        if (element.type === 'range') {
+            element.value = displayValue;
+            
+            const valueElement = document.getElementById(key + 'Value');
+            if (valueElement) {
+                const finalDisplay = setting && setting.unit ? 
+                    displayValue + setting.unit : displayValue;
+                valueElement.textContent = finalDisplay;
+            }
+        } else if (element.type === 'checkbox') {
+            element.checked = newValue;
+        } else if (element.tagName === 'SELECT') {
+            element.value = newValue;
+        }
+        
+        // Add visual feedback for mutations
+        if (highlight && visualizer.highlightMutatedControl) {
+            visualizer.highlightMutatedControl(element, key);
+        }
+    },
+    
+    /**
+     * Apply mutations to a visualizer using its mutation settings
+     */
+    applyMutations(visualizer) {
+        const mutations = [];
+        const mutationSettings = visualizer.constructor.getMutationSettings();
+        
+        if (!mutationSettings) return [];
+        
+        Object.entries(mutationSettings).forEach(([key, config]) => {
+            if (Math.random() < config.probability) {
+                let newValue;
+                
+                if (config.values) {
+                    newValue = config.values[Math.floor(Math.random() * config.values.length)];
+                } else if (config.range) {
+                    newValue = config.range.min + Math.random() * (config.range.max - config.range.min);
+                    if (config.step) {
+                        newValue = this.cleanValue(newValue, config.step);
+                    }
+                }
+                
+                mutations.push({
+                    key: key,
+                    value: newValue,
+                    apply: () => {
+                        visualizer.setSetting(key, newValue);
+                        this.updateUIControl(visualizer, key, newValue, true);
+                    }
+                });
+            }
+        });
+        
+        mutations.forEach(mutation => mutation.apply());
+        
+        if (mutations.length > 0) {
+            console.log(`Applied ${mutations.length} mutations:`, 
+                mutations.map(m => `${m.key}=${m.value}`).join(', '));
+        }
+        
+        return mutations;
+    },
+    
+    /**
+     * Reset visualizer settings to defaults
+     */
+    resetToDefaults(visualizer) {
+        visualizer.mutationEnabled = false;
+        visualizer.mutationTimer = 0;
+        
+        const schema = visualizer.constructor.getSettingsSchema();
+        if (schema) {
+            Object.entries(schema.settings).forEach(([key, setting]) => {
+                if (key === 'mutateMode') {
+                    visualizer.mutationEnabled = setting.default;
+                }
+                
+                visualizer.setSetting(key, setting.default);
+                
+                const element = document.getElementById(key);
+                if (element) {
+                    if (element.type === 'range') {
+                        element.value = setting.default;
+                        const valueElement = document.getElementById(key + 'Value');
+                        if (valueElement) {
+                            valueElement.textContent = setting.default + (setting.unit || '');
+                        }
+                    } else if (element.type === 'checkbox') {
+                        element.checked = setting.default;
+                    } else if (element.tagName === 'SELECT') {
+                        element.value = setting.default;
+                    }
+                }
+            });
+        }
+        
+        console.log('Settings reset to defaults');
     }
 };
-
-// ====================================
-// === UPDATED VISUALIZER TEMPLATE ===
-// ====================================
-
-// Example of how to update existing visualizers:
-// At the end of bars.viz.js, replace the window.BarsVisualizer line with:
-
-/*
-// Auto-register this visualizer
-if (window.VisualizerRegistry) {
-    window.VisualizerRegistry.register('bars', 'Vertical Bars', BarsVisualizer);
-} else {
-    // Fallback for backward compatibility
-    window.BarsVisualizer = BarsVisualizer;
-}
-*/
-
-// And at the end of plasma.viz.js:
-
-/*
-// Auto-register this visualizer
-if (window.VisualizerRegistry) {
-    window.VisualizerRegistry.register('plasma', 'Plasma Flow', PlasmaVisualizer);
-} else {
-    // Fallback for backward compatibility
-    window.PlasmaVisualizer = PlasmaVisualizer;
-}
-*/

@@ -230,68 +230,11 @@ class BarsVisualizer {
     }
     
     mutateSettings() {
-        const mutations = [];
-        const mutationSettings = this.constructor.getMutationSettings();
-        
-        Object.entries(mutationSettings).forEach(([key, config]) => {
-            if (Math.random() < config.probability) {
-                let newValue;
-                
-                if (config.values) {
-                    if (config.bias && key === 'peakDots') {
-                        newValue = Math.random() < config.bias;
-                    } else {
-                        newValue = config.values[Math.floor(Math.random() * config.values.length)];
-                    }
-                } else if (config.range) {
-                    newValue = config.range.min + Math.random() * (config.range.max - config.range.min);
-                }
-                
-                mutations.push({
-                    key: key,
-                    value: newValue,
-                    apply: () => {
-                        this.setSetting(key, newValue);
-                        this.updateUIControl(key, newValue, true); // true = mutation highlight
-                    }
-                });
-            }
-        });
-        
-        mutations.forEach(mutation => mutation.apply());
-        
-        if (mutations.length > 0) {
-            console.log(`Applied ${mutations.length} mutations:`, mutations.map(m => `${m.key}=${m.value}`).join(', '));
-        }
+        window.VisualizerRegistry.applyMutations(this);
     }
-    
+
     updateUIControl(key, newValue, highlight = false) {
-        const element = document.getElementById(key);
-        if (!element) return;
-        
-        // Update the control value
-        if (element.type === 'range') {
-            const uiValue = key === 'smoothing' ? newValue * 100 : 
-                          key === 'sensitivity' ? newValue * 100 : newValue;
-            element.value = uiValue;
-            
-            const valueElement = document.getElementById(key + 'Value');
-            if (valueElement) {
-                const displayValue = key === 'smoothing' ? Math.round(newValue * 100) + '%' :
-                                  key === 'sensitivity' ? Math.round(newValue * 100) + '%' :
-                                  newValue;
-                valueElement.textContent = displayValue;
-            }
-        } else if (element.type === 'checkbox') {
-            element.checked = newValue;
-        } else if (element.tagName === 'SELECT') {
-            element.value = newValue;
-        }
-        
-        // Add visual feedback for mutations
-        if (highlight) {
-            this.highlightMutatedControl(element, key);
-        }
+        window.VisualizerRegistry.updateUIControl(this, key, newValue, highlight);
     }
     
     highlightMutatedControl(element, key) {
@@ -342,36 +285,7 @@ class BarsVisualizer {
     }
     
     resetVisualizerSettings() {
-        this.mutationEnabled = false;
-        this.mutationTimer = 0;
-        
-        const schema = this.constructor.getSettingsSchema();
-        if (schema) {
-            Object.entries(schema.settings).forEach(([key, setting]) => {
-                if (key === 'mutateMode') {
-                    this.mutationEnabled = setting.default;
-                }
-                
-                this.setSetting(key, setting.default);
-                
-                const element = document.getElementById(key);
-                if (element) {
-                    if (element.type === 'range') {
-                        element.value = setting.default;
-                        const valueElement = document.getElementById(key + 'Value');
-                        if (valueElement) {
-                            valueElement.textContent = setting.default + (setting.unit || '');
-                        }
-                    } else if (element.type === 'checkbox') {
-                        element.checked = setting.default;
-                    } else if (element.tagName === 'SELECT') {
-                        element.value = setting.default;
-                    }
-                }
-            });
-        }
-        
-        console.log('Settings reset to defaults');
+        window.VisualizerRegistry.resetToDefaults(this);
     }
     
     toggleSettings() {
