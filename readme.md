@@ -72,7 +72,7 @@ vizwiz/
 ├── plasma.viz.js         # Plasma FLow visualizer        (Claude Sonnet 4)
 ├── kaleidoscope.viz.js   # Kaleidoscope visualizer       (Claude Sonnet 4)
 ├── oscilloscope.viz.js   # Oscilloscope visualizer       (ChatGPT 5)
-├── blobs.viz.js          # Oscilloscope visualizer       (Deepseek R1)
+├── blobs.viz.js          # Blobby Blobs visualizer       (Deepseek R1)
 └── README.md             # This file
 ```
 
@@ -90,6 +90,6 @@ vizwiz/
 This project is licensed under the MIT License
 
 ## 🚀 Quick Links
-- [📖 Visualizer Development Guide](vizwiz.txt)
-- [🐛 Report Issues](https://github.com/RobinNixon/vizwiz/issues)
-- [💡 Feature Requests](https://github.com/RobinNixon/vizwiz/discussions)
+- 📖 [Visualizer Development Guide](vizwiz.txt)
+- 🐛 [Report Issues](https://github.com/RobinNixon/vizwiz/issues)
+- 💡 [Feature Requests](https://github.com/RobinNixon/vizwiz/discussions)
