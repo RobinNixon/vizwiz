@@ -48,16 +48,16 @@ Provide `vizwiz.txt` and one of the visualizer files to an AI (eg `plasma.viz.js
 
 **Example registration:**
 
-At the end of the index.html filer add the line:
+At the end of the index.html file add the line:
 
 ```javascript
 <script src='vizname.viz.js'></script>
 ```
-Make sure you ar your AI have added the following at the end of the visualizer file to register it:
+Make sure you or your AI have added the following (replacing the arguments as necessary) at the end of the visualizer file to register it:
 ```javascript
 // At the end of your myawesome.viz.js file
 if (window.VisualizerRegistry) {
-    window.VisualizerRegistry.register('myawesome', 'My Awesome Visualizer', MyAwesomeVisualizer);
+    window.VisualizerRegistry.register('newviz', 'New Visualizer', newVisualizer);
 }
 ```
 
