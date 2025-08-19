@@ -24,7 +24,7 @@ class VizWiz {
         this.setupEventListeners();
         this.setupDragAndDrop();
         this.registerVisualizers();
-        console.log('VizWiz initialized successfully');
+        // console.log('VizWiz initialized successfully');
     }
     
     setupElements() {
@@ -62,7 +62,7 @@ class VizWiz {
             this.analyser.fftSize = 512;
             this.bufferLength = this.analyser.frequencyBinCount;
             this.dataArray = new Uint8Array(this.bufferLength);
-            console.log('Audio context created successfully');
+            // console.log('Audio context created successfully');
         } catch (error) {
             console.error('Failed to create audio context:', error);
         }
@@ -178,7 +178,7 @@ class VizWiz {
             
             registeredVisualizers.forEach(({ id, name, class: VisualizerClass }) => {
                 this.visualizers.set(id, VisualizerClass);
-                console.log(`Registered ${id} visualizer: ${name}`);
+                // console.log(`Registered ${id} visualizer: ${name}`);
             });
             
             // Populate the dropdown
@@ -204,7 +204,7 @@ class VizWiz {
             select.appendChild(option);
         });
         
-        console.log(`Populated dropdown with ${visualizers.length} visualizers`);
+        // console.log(`Populated dropdown with ${visualizers.length} visualizers`);
     }
     
     // ... rest of the methods remain the same ...
@@ -227,7 +227,7 @@ class VizWiz {
                 }, { once: true });
             }
             
-            console.log('Audio file loaded:', file.name);
+            // console.log('Audio file loaded:', file.name);
         } catch (error) {
             console.error('Failed to load audio file:', error);
         }
@@ -248,7 +248,7 @@ class VizWiz {
         this.elements.fullscreenBtn.disabled = false;
         
         this.elements.duration.textContent = this.formatTime(this.audioElement.duration);
-        console.log('Audio loaded and connected to analyser');
+        // console.log('Audio loaded and connected to analyser');
     }
     
     async togglePlayback() {
@@ -303,7 +303,7 @@ class VizWiz {
                 this.currentVisualizer.startVisualization(this.analyser, this.dataArray, this.ctx, this.canvas);
             }
             
-            console.log(`Switched to ${id} visualizer`);
+            // console.log(`Switched to ${id} visualizer`);
         }
     }
     
@@ -342,7 +342,7 @@ class VizWiz {
                 this.elements.repeatBtn.title = 'Repeat: Off';
                 break;
         }
-        console.log('Repeat mode:', this.repeatMode);
+        // console.log('Repeat mode:', this.repeatMode);
     }
     
     toggleFullscreen() {
@@ -446,7 +446,7 @@ window.VisualizerRegistry = {
             name: name,
             class: visualizerClass
         });
-        console.log(`Registered visualizer: ${id} (${name})`);
+        // console.log(`Registered visualizer: ${id} (${name})`);
     },
     
     getAll() {
