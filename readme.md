@@ -97,7 +97,7 @@ if (window.VisualizerRegistry) {
 ### Project Structure
 ```
 vizwiz/
-├── vizwiz.html          # Main application
+├── vizwiz.html         # Main application
 ├── vizwiz.js           # Core engine
 ├── vizwiz.css          # Styling
 ├── vizwiz.txt          # Visualizer development guide

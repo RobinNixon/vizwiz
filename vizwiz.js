@@ -211,6 +211,16 @@ class VizWiz {
     
     loadAudioFile(file, autoPlay = true) {
         try {
+            // Stop current playback if playing
+            if (this.isPlaying) {
+                this.audioElement.pause();
+                this.isPlaying = false;
+                this.elements.playIcon.textContent = '▶️';
+                if (this.currentVisualizer && this.currentVisualizer.stopVisualization) {
+                    this.currentVisualizer.stopVisualization();
+                }
+            }
+            
             const url = URL.createObjectURL(file);
             this.audioElement.src = url;
             
@@ -218,13 +228,22 @@ class VizWiz {
             this.elements.trackDetails.textContent = `${this.formatFileSize(file.size)} • ${file.type}`;
             
             if (autoPlay) {
-                this.audioElement.addEventListener('loadedmetadata', () => {
-                    setTimeout(() => {
-                        if (!this.isPlaying) {
-                            this.togglePlayback();
-                        }
-                    }, 100);
-                }, { once: true });
+                // Use a promise-based approach instead of once-only event listener
+                const playWhenReady = () => {
+                    if (this.audioElement.readyState >= 2) { // HAVE_CURRENT_DATA or higher
+                        setTimeout(() => {
+                            if (!this.isPlaying) {
+                                this.togglePlayback();
+                            }
+                        }, 100);
+                    } else {
+                        // Wait a bit more if not ready
+                        setTimeout(playWhenReady, 50);
+                    }
+                };
+                
+                // Start checking if ready
+                playWhenReady();
             }
             
             // console.log('Audio file loaded:', file.name);
@@ -232,7 +251,7 @@ class VizWiz {
             console.error('Failed to load audio file:', error);
         }
     }
-    
+
     onAudioLoaded() {
         if (!this.audioSource) {
             this.audioSource = this.audioContext.createMediaElementSource(this.audioElement);
@@ -301,12 +320,13 @@ class VizWiz {
             // Start visualization if audio is playing
             if (this.isPlaying && this.currentVisualizer.startVisualization) {
                 this.currentVisualizer.startVisualization(this.analyser, this.dataArray, this.ctx, this.canvas);
+                // Ensure trackInfo stays hidden when switching during playback
+                this.elements.trackInfo.classList.add('playing');
             }
             
             // console.log(`Switched to ${id} visualizer`);
         }
-    }
-    
+    }    
     updateProgress() {
         const progress = (this.audioElement.currentTime / this.audioElement.duration) * 100;
         this.elements.progressBar.value = progress;
