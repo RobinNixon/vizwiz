@@ -3,7 +3,7 @@ VizWiz Visualizer Plugin Template
 This header documents the interface needed to create custom visualizers for VizWiz.
 Copy this template and implement the required methods to create your own visualizer.
 
-REQUIRED METHODS:
+REQUIRED METHODS
 ================
 
 constructor()
@@ -29,8 +29,8 @@ stopVisualization()
   - Cancel animation frames, clean up resources
   - Remove 'playing' class from trackInfo element if needed
 
-OPTIONAL METHODS:
-=================
+OPTIONAL BUT LIKELY NEEDED BY YOUR VISUALIZER
+=============================================
 
 animate()
   - Main animation loop method
@@ -132,8 +132,8 @@ if (window.VisualizerRegistry) {
     window.MyVisualizerClass = MyVisualizerClass;
 }
 
-EXAMPLE MINIMAL VISUALIZER:
-===========================
+EXAMPLE MINIMAL VISUALIZER REQUIRED FEATURES
+============================================
 
 class SimpleVisualizer {
     constructor() {
@@ -242,7 +242,7 @@ class SimpleVisualizer {
         }
     }
 
-    // Just delegate to the registry!
+    // Delegate to the registry!
     mutateSettings() {
         window.VisualizerRegistry.applyMutations(this);
     }
@@ -255,7 +255,7 @@ class SimpleVisualizer {
         window.VisualizerRegistry.resetToDefaults(this);
     }
 
-    // Still need to implement this for visual feedback
+    // Implement this for visual feedback of mutations
     highlightMutatedControl(element, key) {
         const settingItem = element.closest('.setting-item');
         if (!settingItem) return;
@@ -269,7 +269,9 @@ class SimpleVisualizer {
         }, 1000);
     }
 
-    // Standard settings UI methods (copy from existing visualizers)
+    // REQUIRED UI integration methods (must be implemented in every visualizer)
+    // These are called directly by vizwiz.js. Your visualizer WILL break if omitted
+    // Rewite according to your implementation
     buildVisualizerSettings() { /* ... */ }
     createSettingItem(key, setting) { /* ... */ }
     toggleSettings() { /* ... */ }

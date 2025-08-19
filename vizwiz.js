@@ -468,7 +468,7 @@ window.VisualizerRegistry = {
         });
         // console.log(`Registered visualizer: ${id} (${name})`);
     },
-    
+
     getAll() {
         return this.visualizers;
     },
