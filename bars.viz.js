@@ -1,0 +1,691 @@
+class BarsVisualizer {
+    constructor() {
+        this.bars = 64;
+        this.barWidth = 0;
+        this.barSpacing = 2;
+        this.smoothing = 0.8;
+        this.previousHeights = new Array(this.bars).fill(0);
+        this.gradient = null;
+        this.peakDots = new Array(this.bars).fill(0);
+        this.peakFallSpeed = 0.3;
+        this.peakDotsEnabled = true;
+        this.sensitivity = 1.0;
+        this.backgroundStyle = 'dark';
+        
+        // Animation properties
+        this.animationId = null;
+        this.analyser = null;
+        this.dataArray = null;
+        this.ctx = null;
+        this.canvas = null;
+        
+        // Mutation properties
+        this.mutationEnabled = false;
+        this.mutationTimer = 0;
+        this.mutationInterval = 300;
+        
+        // UI elements
+        this.elements = null;
+        
+        this.colorSchemes = {
+            purple: { primary: '#6366f1', secondary: '#8b5cf6', accent: '#ec4899', peak: '#f59e0b' },
+            rainbow: { primary: '#ff0000', secondary: '#ffff00', accent: '#00ff00', peak: '#ffffff' },
+            fire: { primary: '#ff4500', secondary: '#ff6500', accent: '#ffff00', peak: '#ffffff' },
+            ocean: { primary: '#0066cc', secondary: '#0099ff', accent: '#00ccff', peak: '#ffffff' },
+            neon: { primary: '#00ff00', secondary: '#00ff88', accent: '#00ffff', peak: '#ffffff' },
+            sunset: { primary: '#ff6b35', secondary: '#f7931e', accent: '#ffcd3c', peak: '#ffffff' },
+            plasma: { primary: '#ff0080', secondary: '#ff4080', accent: '#ff8080', peak: '#ffffff' },
+            ice: { primary: '#4db8ff', secondary: '#80d0ff', accent: '#b3e0ff', peak: '#ffffff' }
+        };
+        
+        this.backgroundStyles = {
+            dark: '#0c0c0c',
+            black: '#000000',
+            navy: '#0a0a1a',
+            purple: '#1a0a1a',
+            green: '#0a1a0a',
+            blue: '#0a0a2a',
+            red: '#2a0a0a',
+            orange: '#2a1a0a',
+            teal: '#0a2a2a',
+            magenta: '#2a0a2a',
+            galaxy: 'gradient',
+            neon: 'gradient'
+        };
+        
+        this.colors = this.colorSchemes.purple;
+    }
+    
+    init(elements) {
+        this.elements = elements;
+        this.buildVisualizerSettings();
+        
+        // Set up reset settings button listener
+        const resetBtn = document.getElementById('resetSettings');
+        if (resetBtn) {
+            resetBtn.addEventListener('click', () => {
+                this.resetVisualizerSettings();
+            });
+        }
+    }
+    
+    startVisualization(analyser, dataArray, ctx, canvas) {
+        this.analyser = analyser;
+        this.dataArray = dataArray;
+        this.ctx = ctx;
+        this.canvas = canvas;
+        
+        if (!this.animationId) {
+            this.animate();
+        }
+    }
+    
+    stopVisualization() {
+        if (this.animationId) {
+            cancelAnimationFrame(this.animationId);
+            this.animationId = null;
+        }
+        if (this.elements && this.elements.trackInfo) {
+            this.elements.trackInfo.classList.remove('playing');
+        }
+    }
+    
+    animate() {
+        this.animationId = requestAnimationFrame(() => this.animate());
+        
+        if (this.analyser && this.dataArray) {
+            this.analyser.getByteFrequencyData(this.dataArray);
+            
+            if (this.mutationEnabled) {
+                this.mutationTimer++;
+                if (this.mutationTimer >= this.mutationInterval) {
+                    this.mutateSettings();
+                    this.mutationTimer = 0;
+                }
+            }
+            
+            if (this.ctx && this.canvas) {
+                this.render(this.ctx, this.dataArray, this.canvas.width / devicePixelRatio, this.canvas.height / devicePixelRatio);
+            }
+        }
+    }
+    
+    buildVisualizerSettings() {
+        const container = document.getElementById('visualizerSettings');
+        if (!container) return;
+        
+        container.innerHTML = '';
+        
+        const schema = this.constructor.getSettingsSchema();
+        if (!schema) return;
+        
+        const group = document.createElement('div');
+        group.className = 'setting-group';
+        
+        const title = document.createElement('h4');
+        title.textContent = schema.name;
+        group.appendChild(title);
+        
+        Object.entries(schema.settings).forEach(([key, setting]) => {
+            const item = this.createSettingItem(key, setting);
+            group.appendChild(item);
+        });
+        
+        container.appendChild(group);
+    }
+    
+    createSettingItem(key, setting) {
+        const item = document.createElement('div');
+        item.className = 'setting-item';
+        
+        const label = document.createElement('label');
+        label.textContent = setting.label;
+        label.setAttribute('for', key);
+        item.appendChild(label);
+        
+        let input, valueDisplay;
+        
+        switch (setting.type) {
+            case 'range':
+                input = document.createElement('input');
+                input.type = 'range';
+                input.id = key;
+                input.min = setting.min;
+                input.max = setting.max;
+                input.value = setting.default;
+                input.step = setting.step || 1;
+                
+                valueDisplay = document.createElement('span');
+                valueDisplay.id = key + 'Value';
+                valueDisplay.textContent = setting.default + (setting.unit || '');
+                
+                input.addEventListener('input', (e) => {
+                    const value = parseInt(e.target.value);
+                    valueDisplay.textContent = value + (setting.unit || '');
+                    this.setSetting(key, value);
+                });
+                
+                item.appendChild(input);
+                item.appendChild(valueDisplay);
+                break;
+                
+            case 'checkbox':
+                input = document.createElement('input');
+                input.type = 'checkbox';
+                input.id = key;
+                input.checked = setting.default;
+                
+                // Add mutation status indicator for mutateMode
+                if (key === 'mutateMode') {
+                    const statusSpan = document.createElement('span');
+                    statusSpan.className = 'mutation-status';
+                    statusSpan.style.cssText = 'font-size: 11px; margin-left: 5px;';
+                    item.appendChild(statusSpan);
+                }
+                
+                input.addEventListener('change', (e) => {
+                    if (key === 'mutateMode') {
+                        this.mutationEnabled = e.target.checked;
+                        this.mutationTimer = 0;
+                        console.log('Mutation mode:', this.mutationEnabled ? 'ON' : 'OFF');
+                        
+                        // Update mutation status indicator
+                        const statusSpan = item.querySelector('.mutation-status');
+                        if (statusSpan) {
+                            statusSpan.textContent = this.mutationEnabled ? ' 🎲 ACTIVE' : '';
+                            statusSpan.style.color = this.mutationEnabled ? '#6366f1' : '';
+                            statusSpan.style.fontWeight = this.mutationEnabled ? 'bold' : '';
+                        }
+                    } else {
+                        this.setSetting(key, e.target.checked);
+                    }
+                });
+                
+                item.appendChild(input);
+                break;
+                
+            case 'select':
+                input = document.createElement('select');
+                input.id = key;
+                
+                setting.options.forEach(option => {
+                    const optionElement = document.createElement('option');
+                    optionElement.value = option.value;
+                    optionElement.textContent = option.label;
+                    if (option.value === setting.default) {
+                        optionElement.selected = true;
+                    }
+                    input.appendChild(optionElement);
+                });
+                
+                input.addEventListener('change', (e) => {
+                    this.setSetting(key, e.target.value);
+                });
+                
+                item.appendChild(input);
+                break;
+        }
+        
+        return item;
+    }
+    
+    mutateSettings() {
+        const mutations = [];
+        const mutationSettings = this.constructor.getMutationSettings();
+        
+        Object.entries(mutationSettings).forEach(([key, config]) => {
+            if (Math.random() < config.probability) {
+                let newValue;
+                
+                if (config.values) {
+                    if (config.bias && key === 'peakDots') {
+                        newValue = Math.random() < config.bias;
+                    } else {
+                        newValue = config.values[Math.floor(Math.random() * config.values.length)];
+                    }
+                } else if (config.range) {
+                    newValue = config.range.min + Math.random() * (config.range.max - config.range.min);
+                }
+                
+                mutations.push({
+                    key: key,
+                    value: newValue,
+                    apply: () => {
+                        this.setSetting(key, newValue);
+                        this.updateUIControl(key, newValue, true); // true = mutation highlight
+                    }
+                });
+            }
+        });
+        
+        mutations.forEach(mutation => mutation.apply());
+        
+        if (mutations.length > 0) {
+            console.log(`Applied ${mutations.length} mutations:`, mutations.map(m => `${m.key}=${m.value}`).join(', '));
+        }
+    }
+    
+    updateUIControl(key, newValue, highlight = false) {
+        const element = document.getElementById(key);
+        if (!element) return;
+        
+        // Update the control value
+        if (element.type === 'range') {
+            const uiValue = key === 'smoothing' ? newValue * 100 : 
+                          key === 'sensitivity' ? newValue * 100 : newValue;
+            element.value = uiValue;
+            
+            const valueElement = document.getElementById(key + 'Value');
+            if (valueElement) {
+                const displayValue = key === 'smoothing' ? Math.round(newValue * 100) + '%' :
+                                  key === 'sensitivity' ? Math.round(newValue * 100) + '%' :
+                                  newValue;
+                valueElement.textContent = displayValue;
+            }
+        } else if (element.type === 'checkbox') {
+            element.checked = newValue;
+        } else if (element.tagName === 'SELECT') {
+            element.value = newValue;
+        }
+        
+        // Add visual feedback for mutations
+        if (highlight) {
+            this.highlightMutatedControl(element, key);
+        }
+    }
+    
+    highlightMutatedControl(element, key) {
+        const settingItem = element.closest('.setting-item');
+        if (!settingItem) return;
+        
+        // Add mutation highlight class
+        settingItem.classList.add('mutated');
+        
+        // Create a brief flash effect
+        settingItem.style.background = 'rgba(99, 102, 241, 0.3)';
+        settingItem.style.borderRadius = '4px';
+        settingItem.style.transition = 'all 0.3s ease';
+        
+        // Show mutation indicator
+        let indicator = settingItem.querySelector('.mutation-indicator');
+        if (!indicator) {
+            indicator = document.createElement('span');
+            indicator.className = 'mutation-indicator';
+            indicator.textContent = '🎲';
+            indicator.style.cssText = `
+                margin-left: 8px;
+                opacity: 0;
+                transition: opacity 0.3s ease;
+                font-size: 12px;
+            `;
+            settingItem.appendChild(indicator);
+        }
+        
+        // Animate the indicator
+        indicator.style.opacity = '1';
+        
+        // Remove effects after delay
+        setTimeout(() => {
+            settingItem.style.background = '';
+            if (indicator) {
+                indicator.style.opacity = '0';
+            }
+        }, 1000);
+        
+        // Remove indicator after animation
+        setTimeout(() => {
+            settingItem.classList.remove('mutated');
+            if (indicator && indicator.parentNode) {
+                indicator.parentNode.removeChild(indicator);
+            }
+        }, 1300);
+    }
+    
+    resetVisualizerSettings() {
+        this.mutationEnabled = false;
+        this.mutationTimer = 0;
+        
+        const schema = this.constructor.getSettingsSchema();
+        if (schema) {
+            Object.entries(schema.settings).forEach(([key, setting]) => {
+                if (key === 'mutateMode') {
+                    this.mutationEnabled = setting.default;
+                }
+                
+                this.setSetting(key, setting.default);
+                
+                const element = document.getElementById(key);
+                if (element) {
+                    if (element.type === 'range') {
+                        element.value = setting.default;
+                        const valueElement = document.getElementById(key + 'Value');
+                        if (valueElement) {
+                            valueElement.textContent = setting.default + (setting.unit || '');
+                        }
+                    } else if (element.type === 'checkbox') {
+                        element.checked = setting.default;
+                    } else if (element.tagName === 'SELECT') {
+                        element.value = setting.default;
+                    }
+                }
+            });
+        }
+        
+        console.log('Settings reset to defaults');
+    }
+    
+    toggleSettings() {
+        if (this.elements && this.elements.settingsPanel) {
+            this.elements.settingsPanel.classList.toggle('hidden');
+        }
+    }
+    
+    closeSettings() {
+        if (this.elements && this.elements.settingsPanel) {
+            this.elements.settingsPanel.classList.add('hidden');
+        }
+    }
+    
+    onCanvasResize(width, height) {
+        // Handle canvas resize if needed
+        // This method is called when the canvas is resized
+    }
+    
+    static getSettingsSchema() {
+        return {
+            name: 'Bar Visualizer',
+            settings: {
+                barCount: {
+                    type: 'range',
+                    label: 'Bar Count',
+                    min: 16,
+                    max: 128,
+                    default: 64,
+                    step: 16,
+                    unit: ''
+                },
+                smoothing: {
+                    type: 'range',
+                    label: 'Smoothing',
+                    min: 0,
+                    max: 95,
+                    default: 80,
+                    step: 5,
+                    unit: '%'
+                },
+                peakDots: {
+                    type: 'checkbox',
+                    label: 'Peak Dots',
+                    default: true
+                },
+                colorScheme: {
+                    type: 'select',
+                    label: 'Color Scheme',
+                    options: [
+                        { value: 'purple', label: 'Purple Gradient' },
+                        { value: 'rainbow', label: 'Rainbow' },
+                        { value: 'fire', label: 'Fire' },
+                        { value: 'ocean', label: 'Ocean' },
+                        { value: 'neon', label: 'Neon Green' },
+                        { value: 'sunset', label: 'Sunset' },
+                        { value: 'plasma', label: 'Plasma' },
+                        { value: 'ice', label: 'Ice Blue' }
+                    ],
+                    default: 'purple'
+                },
+                sensitivity: {
+                    type: 'range',
+                    label: 'Sensitivity',
+                    min: 50,
+                    max: 200,
+                    default: 100,
+                    step: 10,
+                    unit: '%'
+                },
+                backgroundColor: {
+                    type: 'select',
+                    label: 'Background',
+                    options: [
+                        { value: 'dark', label: 'Dark Gradient' },
+                        { value: 'black', label: 'Pure Black' },
+                        { value: 'navy', label: 'Deep Navy' },
+                        { value: 'purple', label: 'Dark Purple' },
+                        { value: 'green', label: 'Dark Green' },
+                        { value: 'blue', label: 'Electric Blue' },
+                        { value: 'red', label: 'Deep Red' },
+                        { value: 'orange', label: 'Sunset Orange' },
+                        { value: 'teal', label: 'Vibrant Teal' },
+                        { value: 'magenta', label: 'Hot Magenta' },
+                        { value: 'galaxy', label: 'Galaxy' },
+                        { value: 'neon', label: 'Neon Glow' }
+                    ],
+                    default: 'dark'
+                },
+                mutateMode: {
+                    type: 'checkbox',
+                    label: 'Mutate Colors',
+                    default: false
+                }
+            }
+        };
+    }
+    
+    static getMutationSettings() {
+        return {
+            colorScheme: {
+                probability: 0.6,
+                values: ['purple', 'rainbow', 'fire', 'ocean', 'neon', 'sunset', 'plasma', 'ice']
+            },
+            barCount: {
+                probability: 0.3,
+                values: [48, 56, 64, 72, 80]
+            },
+            smoothing: {
+                probability: 0.25,
+                range: { min: 0.7, max: 0.9 }
+            },
+            peakDots: {
+                probability: 0.15,
+                values: [true, false],
+                bias: 0.7
+            },
+            backgroundColor: {
+                probability: 0.5,
+                values: ['dark', 'black', 'navy', 'purple', 'green', 'blue', 'red', 'orange', 'teal', 'magenta', 'galaxy', 'neon']
+            }
+        };
+    }
+    
+    drawBackground(ctx, width, height) {
+        switch (this.backgroundStyle) {
+            case 'galaxy':
+                const gradient = ctx.createRadialGradient(
+                    width/2, height/2, 0,
+                    width/2, height/2, Math.max(width, height)/2
+                );
+                gradient.addColorStop(0, '#1a0a2a');
+                gradient.addColorStop(0.5, '#0a0a1a');
+                gradient.addColorStop(1, '#000010');
+                ctx.fillStyle = gradient;
+                break;
+            case 'neon':
+                const neonGradient = ctx.createRadialGradient(
+                    width/2, height/2, 0,
+                    width/2, height/2, Math.max(width, height)/2
+                );
+                neonGradient.addColorStop(0, '#0a2a0a');
+                neonGradient.addColorStop(0.7, '#051505');
+                neonGradient.addColorStop(1, '#000a00');
+                ctx.fillStyle = neonGradient;
+                break;
+            default:
+                ctx.fillStyle = this.backgroundStyles[this.backgroundStyle] || this.backgroundStyles.dark;
+                break;
+        }
+        
+        ctx.fillRect(0, 0, width, height);
+    }
+    
+    createGradient(ctx, width, height) {
+        const gradient = ctx.createLinearGradient(0, height, 0, 0);
+        gradient.addColorStop(0, this.colors.primary);
+        gradient.addColorStop(0.5, this.colors.secondary);
+        gradient.addColorStop(1, this.colors.accent);
+        return gradient;
+    }
+    
+    render(ctx, dataArray, width, height) {
+        // Draw background first
+        this.drawBackground(ctx, width, height);
+        
+        // Calculate bar dimensions
+        this.barWidth = (width - (this.bars - 1) * this.barSpacing) / this.bars;
+        
+        // Create gradient if needed
+        if (!this.gradient) {
+            this.gradient = this.createGradient(ctx, width, height);
+        }
+        
+        // Process frequency data
+        const barHeights = this.processFrequencyData(dataArray, height);
+        
+        // Draw bars
+        this.drawBars(ctx, barHeights, width, height);
+        
+        // Draw peak dots
+        this.drawPeakDots(ctx, barHeights, height);
+        
+        // Update peak dots
+        this.updatePeakDots(barHeights);
+    }
+    
+    processFrequencyData(dataArray, height) {
+        const barHeights = [];
+        const dataStep = Math.floor(dataArray.length / this.bars);
+        
+        for (let i = 0; i < this.bars; i++) {
+            let sum = 0;
+            const start = i * dataStep;
+            const end = Math.min(start + dataStep, dataArray.length);
+            
+            for (let j = start; j < end; j++) {
+                sum += dataArray[j];
+            }
+            
+            const average = sum / (end - start);
+            let normalizedHeight = (average / 255) * this.sensitivity;
+            normalizedHeight = Math.min(1, normalizedHeight);
+            normalizedHeight = Math.pow(normalizedHeight, 0.7);
+            
+            const smoothedHeight = this.previousHeights[i] * this.smoothing + 
+                                 normalizedHeight * (1 - this.smoothing);
+            
+            this.previousHeights[i] = smoothedHeight;
+            barHeights[i] = smoothedHeight * height * 0.8;
+        }
+        
+        return barHeights;
+    }
+    
+    drawBars(ctx, barHeights, width, height) {
+        ctx.fillStyle = this.gradient;
+        
+        for (let i = 0; i < this.bars; i++) {
+            const x = i * (this.barWidth + this.barSpacing);
+            const barHeight = barHeights[i];
+            const y = height - barHeight;
+            
+            ctx.fillRect(x, y, this.barWidth, barHeight);
+            
+            if (barHeight > height * 0.6) {
+                ctx.shadowColor = this.colors.accent;
+                ctx.shadowBlur = 10;
+                ctx.fillRect(x, y, this.barWidth, barHeight);
+                ctx.shadowBlur = 0;
+            }
+        }
+    }
+    
+    drawPeakDots(ctx, barHeights, height) {
+        if (!this.peakDotsEnabled) return;
+        
+        ctx.fillStyle = this.colors.peak;
+        
+        for (let i = 0; i < this.bars; i++) {
+            const x = i * (this.barWidth + this.barSpacing) + this.barWidth / 2;
+            const peakY = height - this.peakDots[i];
+            
+            if (this.peakDots[i] > 0) {
+                ctx.beginPath();
+                ctx.arc(x, peakY, 2, 0, 2 * Math.PI);
+                ctx.fill();
+            }
+        }
+    }
+    
+    updatePeakDots(barHeights) {
+        for (let i = 0; i < this.bars; i++) {
+            if (barHeights[i] > this.peakDots[i]) {
+                this.peakDots[i] = barHeights[i];
+            } else {
+                this.peakDots[i] = Math.max(0, this.peakDots[i] - this.peakFallSpeed);
+            }
+        }
+    }
+    
+    setSetting(key, value) {
+        switch (key) {
+            case 'barCount':
+                this.setBarCount(parseInt(value));
+                break;
+            case 'smoothing':
+                this.setSmoothing(value / 100);
+                break;
+            case 'peakDots':
+                this.setPeakDots(value);
+                break;
+            case 'colorScheme':
+                this.setColorScheme(value);
+                break;
+            case 'sensitivity':
+                this.setSensitivity(value / 100);
+                break;
+            case 'backgroundColor':
+                this.setBackgroundStyle(value);
+                break;
+        }
+    }
+    
+    setBarCount(count) {
+        this.bars = Math.max(16, Math.min(128, count));
+        this.previousHeights = new Array(this.bars).fill(0);
+        this.peakDots = new Array(this.bars).fill(0);
+    }
+    
+    setSmoothing(value) {
+        this.smoothing = Math.max(0, Math.min(0.95, value));
+    }
+    
+    setPeakDots(enabled) {
+        this.peakDotsEnabled = enabled;
+    }
+    
+    setColorScheme(schemeName) {
+        if (this.colorSchemes[schemeName]) {
+            this.colors = this.colorSchemes[schemeName];
+            this.gradient = null;
+        }
+    }
+    
+    setSensitivity(value) {
+        this.sensitivity = Math.max(0.1, Math.min(3.0, value));
+    }
+    
+    setBackgroundStyle(style) {
+        this.backgroundStyle = style;
+    }
+}
+
+if (window.VisualizerRegistry) {
+  window.VisualizerRegistry.register('bars', 'Vertical Bars', BarsVisualizer);
+}

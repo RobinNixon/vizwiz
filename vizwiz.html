@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VizWiz - Music Visualizer</title>
+    <link rel="stylesheet" href="vizwiz.css">
+</head>
+<body>
+    <div id="app">
+        <header id="controls">
+            <div class="control-group">
+                <button id="fileBtn" class="btn primary">
+                    <span>📁</span> Load Music
+                </button>
+                <input type="file" id="fileInput" accept="audio/*" style="display: none;">
+            </div>
+            
+            <div class="control-group player-controls">
+                <button id="playBtn" class="btn" disabled>
+                    <span id="playIcon">▶️</span>
+                </button>
+                <div class="progress-container">
+                    <input type="range" id="progressBar" min="0" max="100" value="0" disabled>
+                    <div class="time-display">
+                        <span id="currentTime">0:00</span> / <span id="duration">0:00</span>
+                    </div>
+                </div>
+                <button id="repeatBtn" class="btn" disabled title="Repeat Mode">
+                    <span id="repeatIcon">↩️</span>
+                </button>
+            </div>
+            
+            <div class="control-group">
+                <div class="volume-control">
+                    <span>🔊</span>
+                    <input type="range" id="volumeSlider" min="0" max="100" value="80">
+                </div>
+                
+                <!-- Dropdown will be auto-populated by JavaScript -->
+                <select id="visualizerSelect">
+                    <!-- Options dynamically added by VisualizerRegistry -->
+                </select>
+                
+                <button id="settingsBtn" class="btn" disabled>
+                    <span>⚙️</span>
+                </button>
+                
+                <button id="fullscreenBtn" class="btn" disabled>
+                    <span>⛶</span>
+                </button>
+            </div>
+        </header>
+
+        <div id="visualizerContainer">
+            <canvas id="visualizerCanvas"></canvas>
+            <div id="trackInfo">
+                <h2 id="trackTitle">Load a music file to begin</h2>
+                <p id="trackDetails">Drag & drop or click "Load Music"</p>
+            </div>
+        </div>
+
+        <!-- Settings Panel -->
+        <div id="settingsPanel" class="hidden">
+            <div class="settings-header">
+                <h3>Visualizer Settings</h3>
+                <button id="closeSettingsBtn" class="btn-close">✕</button>
+            </div>
+            
+            <div class="settings-content">
+                <!-- Dynamic Visualizer Settings -->
+                <div id="visualizerSettings"></div>
+                
+                <div class="settings-footer">
+                    <button id="resetSettings" class="btn">Reset Defaults</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <audio id="audioPlayer" preload="auto"></audio>
+
+    <!-- Load Registry FIRST, then visualizers, then VizWiz -->
+    <script src='vizwiz.js'></script>
+    <script src='bars.viz.js'></script>
+    <script src='plasma.viz.js'></script>
+</body>
+</html>
