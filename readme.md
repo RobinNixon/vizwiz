@@ -26,7 +26,7 @@ Transform your music into stunning visual experiences! VizWiz is a lightweight, 
 2. **Open in Browser**
    ```bash
    # Simply open vizwiz.html in any modern browser
-   open vizwiz.html
+   open index.html
    ```
 
 3. **Load Your Music**
@@ -54,7 +54,7 @@ if (window.VisualizerRegistry) {
 ### Project Structure
 ```
 vizwiz/
-├── index.html           # Main application
+├── index.html            # Main application
 ├── vizwiz.js             # Core engine
 ├── vizwiz.css            # Styling
 ├── vizwiz.txt            # Visualizer development guide
