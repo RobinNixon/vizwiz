@@ -73,6 +73,7 @@ vizwiz/
 ├── kaleidoscope.viz.js   # Kaleidoscope visualizer       (Claude Sonnet 4)
 ├── oscilloscope.viz.js   # Oscilloscope visualizer       (ChatGPT 5)
 ├── blobs.viz.js          # Blobby Blobs visualizer       (Deepseek R1)
+├── fractal.viz.js        # Fractal Dreams visualizer     (Gemini 2.5 Pro)
 └── README.md             # This file
 ```
 
