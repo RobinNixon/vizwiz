@@ -53,12 +53,13 @@ vizwiz/
 ├── vizwiz.css            # CSS Styling
 ├── vizwiz.txt            # Visualizer development guide
 ├── bars.viz.js           # Vertical Bars visualizer      (Claude Sonnet 4)
-├── plasma.viz.js         # Plasma FLow visualizer        (Claude Sonnet 4)
-├── kaleidoscope.viz.js   # Kaleidoscope visualizer       (Claude Sonnet 4)
-├── oscilloscope.viz.js   # Oscilloscope visualizer       (ChatGPT 5 Fast)
 ├── blobs.viz.js          # Blobby Blobs visualizer       (Deepseek R1)
+├── bouncer.viz.js        # Big Bouncer visualizer        (Grok 4)
 ├── fractal.viz.js        # Fractal Dreams visualizer     (Gemini 2.5 Pro)
 ├── groove.viz.js         # Groovy Groove visualizer      (Qwen3-235B-A22B-2507)
+├── kaleidoscope.viz.js   # Kaleidoscope visualizer       (Claude Sonnet 4)
+├── oscilloscope.viz.js   # Oscilloscope visualizer       (ChatGPT 5 Fast)
+├── plasma.viz.js         # Plasma Flow visualizer        (Claude Sonnet 4)
 └── README.md             # This readme file
 ```
 
