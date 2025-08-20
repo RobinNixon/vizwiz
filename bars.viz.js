@@ -160,7 +160,7 @@ class BarsVisualizer {
         valueDisplay.textContent = setting.default + (setting.unit || '');
         
         input.addEventListener('input', (e) => {
-          const value = parseInt(e.target.value);
+          const value = setting.step < 1 ? parseFloat(e.target.value) : parseInt(e.target.value);
           valueDisplay.textContent = value + (setting.unit || '');
           this.setSetting(key, value);
         });

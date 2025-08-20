@@ -1,6 +1,10 @@
 VizWiz Visualizer 1.0 Specification
 
-To create your own visualization plug-ins, where vizname is the ID of your visualizer, you will need to incorporate at least the following functions in order to operate cleanly within the VizWiz environment. At the end of this file is an example of a working visualizer. Follow it's structure if in doubt.
+A modular, browser-based music visualizer with a plugin architecture
+
+Transform your music into stunning visual experiences! VizWiz is a lightweight, entirely client-side music visualizer that runs directly in your browser. Drop in audio files and watch them come alive with reactive visual effects.
+
+To create your own visualization plug-ins, where vizname is the ID of your visualizer, you will need to incorporate at least the following functions in order to operate cleanly within the VizWiz environment. At the end of this file is an example of a working visualizer. Follow it's structure if in doubt. To make good use of high resolution displays employ devicePixelRatio in your rendering code.
 
 REQUIRED PROPERTIES
 ===================
@@ -30,7 +34,7 @@ class viznameVisualizer
     // Initialize elements
   }
 
-  getSettingsSchema() {
+  static getSettingsSchema() {
     // Return the schema
   }
 
@@ -62,7 +66,7 @@ class viznameVisualizer
     // Build setting HTML
   }
 
-  getMutationSettings() {
+  static getMutationSettings() {
     // Return mutatable setting object
   }
 
@@ -112,13 +116,13 @@ class viznameVisualizer
 // REQUIRED to register the visualizer - adapt accordingly
 
 if (window.VisualizerRegistry) {
-    window.VisualizerRegistry.register('newviz', 'Nerw Visualizer', newvizVisualizer);
+  window.VisualizerRegistry.register('newviz', 'New Visualizer', NewvizVisualizer);
 }
 
 EXAMPLE VISUALIZER: bars.viz.js
 ===============================
 
-class barsVisualizer {
+class BarsVisualizer {
   constructor() {
     this.bars = 64;
     this.barWidth = 0;
@@ -280,7 +284,7 @@ class barsVisualizer {
         valueDisplay.textContent = setting.default + (setting.unit || '');
         
         input.addEventListener('input', (e) => {
-          const value = parseInt(e.target.value);
+          const value = setting.step < 1 ? parseFloat(e.target.value) : parseInt(e.target.value);
           valueDisplay.textContent = value + (setting.unit || '');
           this.setSetting(key, value);
         });
@@ -721,5 +725,5 @@ class barsVisualizer {
 }
 
 if (window.VisualizerRegistry) {
-  window.VisualizerRegistry.register('bars', 'Vertical Bars', barsVisualizer);
+  window.VisualizerRegistry.register('bars', 'Vertical Bars', BarsVisualizer);
 }
