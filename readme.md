@@ -37,29 +37,12 @@ Transform your music into stunning visual experiences! VizWiz is a lightweight, 
 
 ### Adding New Visualizers
 
-VizWiz uses a plugin architecture that makes adding new visualizers incredibly simple:
+Provide a copy of `vizwiz.txt` to an AI, along with a description of the effects and features you want your visualiser to have, including any user settings you would like to be made available. Or, write your own using the same information. Once complete save the new file in the *vizwiz* folder and add a link at the bottom of the `index.html` file (where commented) like this:
 
-1. **Read the Guide** - Check `vizwiz.txt` for the complete visualizer development guide
-2. **Create Your Plugin** - Follow the template and interface requirements
-2. **Save the Plugin** - Save using the file convention: `vizname.viz.js`
-4. **Register & Go** - Your visualizer automatically appears in the dropdown after adding to the HTML
-
-Provide `vizwiz.txt` and one of the visualizer files to an AI (eg `plasma.viz.js`), along with a description of the effects and features you want, to have it make one for you. Then save it in the *vizwiz* folder.
-
-**Example registration:**
-
-At the end of the index.html file add the line:
-
-```javascript
-<script src='vizname.viz.js'></script>
+```<script src='newviz.viz.js'></script>
 ```
-Make sure you or your AI have added the following (replacing the arguments as necessary) at the end of the visualizer file to register it:
-```javascript
-// At the end of your myawesome.viz.js file
-if (window.VisualizerRegistry) {
-    window.VisualizerRegistry.register('newviz', 'New Visualizer', newVisualizer);
-}
-```
+
+For the best results ask your AI to use different colours from the example provided, and to be creative with your idea. Report any errors back to your AI for correcting - if necessary offer other visualizer examples from this distribution as further guidance.
 
 ### Project Structure
 ```

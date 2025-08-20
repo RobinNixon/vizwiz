@@ -1,323 +1,725 @@
-VizWiz Visualizer Plugin Template
+VizWiz Visualizer 1.0 Specification
 
-This header documents the interface needed to create custom visualizers for VizWiz.
-Copy this template and implement the required methods to create your own visualizer.
+To create your own visualization plug-ins, where vizname is the ID of your visualizer, you will need to incorporate at least the following functions in order to operate cleanly within the VizWiz environment. At the end of this file is an example of a working visualizer. Follow it's structure if in doubt.
+
+REQUIRED PROPERTIES
+===================
+
+this.animationId = null       // For requestAnimationFrame
+this.analyser = null          // Web Audio analyser node
+this.dataArray = null         // Frequency data buffer
+this.ctx = null               // Canvas 2D context
+this.canvas = null            // Canvas element
+this.elements = null          // UI elements object
+this.mutationEnabled = false  // Mutation mode state
+this.mutationTimer = 0        // Mutation timing counter
+this.mutationInterval = 200   // Frames between mutations
 
 REQUIRED METHODS
 ================
 
-constructor()
-  - Initialize your visualizer properties
-  - Set up mutation settings, color schemes, etc.
-  - Define animationId, analyser, dataArray, ctx, canvas, elements properties
+class viznameVisualizer
+{
+  // Write these functions according to requirements
 
-init(elements)
-  - Called once when visualizer is first created
-  - elements: Object containing all UI elements (canvas, buttons, etc.)
-  - Use this to build settings panel: this.buildVisualizerSettings()
+  constructor() {
+    // Construct the class
+  }
 
-startVisualization(analyser, dataArray, ctx, canvas)
-  - Called when audio playback starts
-  - analyser: Web Audio API AnalyserNode for frequency data
-  - dataArray: Uint8Array buffer for frequency data
-  - ctx: 2D canvas rendering context
-  - canvas: HTML canvas element
-  - Start your animation loop here
+  init(elements) {
+    // Initialize elements
+  }
 
-stopVisualization()
-  - Called when audio playback stops
-  - Cancel animation frames, clean up resources
-  - Remove 'playing' class from trackInfo element if needed
+  getSettingsSchema() {
+    // Return the schema
+  }
 
-OPTIONAL BUT LIKELY NEEDED BY YOUR VISUALIZER
-=============================================
+  setSetting(key, value) {
+    // Set various settings
+  }
 
-animate()
-  - Main animation loop method
-  - Call requestAnimationFrame to continue loop
-  - Get frequency data: analyser.getByteFrequencyData(dataArray)
-  - Handle mutations if enabled
-  - Call render method
+  createSettingItem(key, setting) {
+    // Create a setting item
+  }
 
-render(ctx, dataArray, width, height) or render()
-  - Draw your visualization to the canvas
-  - Use frequency data to drive visual effects
+  animate() {
+    // Animation loop
+  }
 
-onCanvasResize(width, height)
-  - Called when canvas size changes
-  - Update any size-dependent calculations
+  render(ctx, dataArray, width, height) {
+    // Render to canvas
+  }
 
-toggleSettings() / closeSettings()
-  - Show/hide the settings panel
-  - Default implementation: this.elements.settingsPanel.classList.toggle('hidden')
+  startVisualization(analyser, dataArray, ctx, canvas) {
+    // Start visualization
+  }
 
-SETTINGS SYSTEM:
-================
+  stopVisualization() {
+    // STop visualisation
+  }
 
-static getSettingsSchema()
-  - Return object describing available settings
-  - Format: { name: 'Visualizer Name', settings: { ... } }
-  - Setting types: 'range', 'checkbox', 'select'
-  - Range: { type: 'range', label: 'Speed', min: 0.1, max: 3.0, default: 1.0, step: 0.1, unit: 'x' }
-  - Checkbox: { type: 'checkbox', label: 'Enable Feature', default: true }
-  - Select: { type: 'select', label: 'Mode', options: [{value: 'mode1', label: 'Mode 1'}], default: 'mode1' }
+  buildVisualizerSettings() {
+    // Build setting HTML
+  }
 
-setSetting(key, value)
-  - Called when user changes a setting
-  - Implement switch statement to handle each setting key
-  - Update internal properties and rebuild if needed
+  getMutationSettings() {
+    // Return mutatable setting object
+  }
 
-MUTATION SYSTEM
-===============
+  highlightMutatedControl(element, key) {
+    // Temporarily highlight the element that has changed
+  }
 
-static getMutationSettings()
-  - Return object describing which settings can be mutated
-  - Format: { settingKey: { probability: 0.5, values: [...] or range: {min, max}, step: 0.1 } }
-  - probability: 0.0-1.0 chance of mutation per cycle
-  - values: Array of possible values to randomly select
-  - range: {min, max} for numeric ranges, optional step for rounding
+  onCanvasResize(width, height) {
+    // If necessary take resize action
+  }
 
-mutateSettings()
-  - Just call window.VisualizerRegistry.applyMutations(this)
-  - The registry handles all mutation logic and UI updates automatically
+  mutateSettings() {
+    // Apply mutations
+    // Keep this function as is — it should not require changing
+    window.VisualizerRegistry.applyMutations(this);
+  }
 
-updateUIControl(key, newValue, highlight = false)
-  - Just call window.VisualizerRegistry.updateUIControl(this, key, newValue, highlight)
-  - Automatically handles number formatting and UI updates
+  updateUIControl(key, newValue, highlight = false) {
+    // Update the UI
+    // Keep this function as is — it should not require changing
+    window.VisualizerRegistry.updateUIControl(this, key, newValue, highlight);
+  }
 
-resetVisualizerSettings()
-  - Just call window.VisualizerRegistry.resetToDefaults(this)
-  - Resets all settings and updates UI controls
+  resetVisualizerSettings() {
+    // Reset settings
+    // Keep this function as is — it should not require changing
+    window.VisualizerRegistry.resetToDefaults(this);
+  }
+  
+  toggleSettings() {
+    // Toggle settings
+    // Keep this function as is — it should not require changing
+    if (this.elements && this.elements.settingsPanel) {
+      this.elements.settingsPanel.classList.toggle('hidden');
+    }
+  }
+  
+  closeSettings() {
+    // Close settings
+    // Keep this function as is — it should not require changing
+    if (this.elements && this.elements.settingsPanel) {
+      this.elements.settingsPanel.classList.add('hidden');
+    }
+  }
+}
 
-highlightMutatedControl(element, key)
-  - Add visual feedback when setting is mutated
-  - Creates brief flash and dice emoji indicator
-  - This method still needs to be implemented in each visualizer
-
-REQUIRED PROPERTIES:
-====================
-
-this.animationId = null              // For requestAnimationFrame
-this.analyser = null                 // Web Audio analyser node
-this.dataArray = null                // Frequency data buffer
-this.ctx = null                      // Canvas 2D context
-this.canvas = null                   // Canvas element
-this.elements = null                 // UI elements object
-this.mutationEnabled = false         // Mutation mode state
-this.mutationTimer = 0               // Mutation timing counter
-this.mutationInterval = 200          // Frames between mutations
-
-HELPER METHODS TO IMPLEMENT:
-============================
-
-buildVisualizerSettings()
-  - Create settings UI from getSettingsSchema()
-  - Add event listeners for controls
-  - Call from init() method
-
-createSettingItem(key, setting)
-  - Create individual setting UI element
-  - Handle range, checkbox, select types
-  - Add change event listeners
-
-REGISTRATION:
-=============
-
-At the end of your file, register the visualizer:
+// REQUIRED to register the visualizer - adapt accordingly
 
 if (window.VisualizerRegistry) {
-    window.VisualizerRegistry.register('myvis', 'My Awesome Visualizer', MyVisualizerClass);
-} else {
-    // Fallback for backward compatibility
-    window.MyVisualizerClass = MyVisualizerClass;
+    window.VisualizerRegistry.register('newviz', 'Nerw Visualizer', newvizVisualizer);
 }
 
-EXAMPLE MINIMAL VISUALIZER REQUIRED FEATURES
-============================================
+EXAMPLE VISUALIZER: bars.viz.js
+===============================
 
-class SimpleVisualizer {
-    constructor() {
-        this.animationId = null;
-        this.analyser = null;
-        this.dataArray = null;
-        this.ctx = null;
-        this.canvas = null;
-        this.elements = null;
-        this.color = '#ff0000';
-        this.mutationEnabled = false;
-        this.mutationTimer = 0;
-        this.mutationInterval = 200;
+class barsVisualizer {
+  constructor() {
+    this.bars = 64;
+    this.barWidth = 0;
+    this.barSpacing = 2;
+    this.smoothing = 0.8;
+    this.previousHeights = new Array(this.bars).fill(0);
+    this.gradient = null;
+    this.peakDots = new Array(this.bars).fill(0);
+    this.peakFallSpeed = 0.3;
+    this.peakDotsEnabled = true;
+    this.sensitivity = 1.0;
+    this.backgroundStyle = 'dark';
+    
+    // Animation properties
+    this.animationId = null;
+    this.analyser = null;
+    this.dataArray = null;
+    this.ctx = null;
+    this.canvas = null;
+    
+    // Mutation properties
+    this.mutationEnabled = false;
+    this.mutationTimer = 0;
+    this.mutationInterval = 300;
+    
+    // UI elements
+    this.elements = null;
+    
+    this.colorSchemes = {
+      purple: { primary: '#6366f1', secondary: '#8b5cf6', accent: '#ec4899', peak: '#f59e0b' },
+      rainbow: { primary: '#ff0000', secondary: '#ffff00', accent: '#00ff00', peak: '#ffffff' },
+      fire: { primary: '#ff4500', secondary: '#ff6500', accent: '#ffff00', peak: '#ffffff' },
+      ocean: { primary: '#0066cc', secondary: '#0099ff', accent: '#00ccff', peak: '#ffffff' },
+      neon: { primary: '#00ff00', secondary: '#00ff88', accent: '#00ffff', peak: '#ffffff' },
+      sunset: { primary: '#ff6b35', secondary: '#f7931e', accent: '#ffcd3c', peak: '#ffffff' },
+      plasma: { primary: '#ff0080', secondary: '#ff4080', accent: '#ff8080', peak: '#ffffff' },
+      ice: { primary: '#4db8ff', secondary: '#80d0ff', accent: '#b3e0ff', peak: '#ffffff' }
+    };
+    
+    this.backgroundStyles = {
+      dark: '#0c0c0c',
+      black: '#000000',
+      navy: '#0a0a1a',
+      purple: '#1a0a1a',
+      green: '#0a1a0a',
+      blue: '#0a0a2a',
+      red: '#2a0a0a',
+      orange: '#2a1a0a',
+      teal: '#0a2a2a',
+      magenta: '#2a0a2a',
+      galaxy: 'gradient',
+      neon: 'gradient'
+    };
+    
+    this.colors = this.colorSchemes.purple;
+  }
+  
+  init(elements) {
+    this.elements = elements;
+    this.buildVisualizerSettings();
+    
+    // Set up reset settings button listener
+    const resetBtn = document.getElementById('resetSettings');
+    if (resetBtn) {
+      resetBtn.addEventListener('click', () => {
+        this.resetVisualizerSettings();
+      });
     }
-
-    init(elements) {
-        this.elements = elements;
-        this.buildVisualizerSettings();
+  }
+  
+  startVisualization(analyser, dataArray, ctx, canvas) {
+    this.analyser = analyser;
+    this.dataArray = dataArray;
+    this.ctx = ctx;
+    this.canvas = canvas;
+    
+    if (!this.animationId) {
+      this.animate();
     }
-
-    startVisualization(analyser, dataArray, ctx, canvas) {
-        this.analyser = analyser;
-        this.dataArray = dataArray;
-        this.ctx = ctx;
-        this.canvas = canvas;
-        if (!this.animationId) this.animate();
+  }
+  
+  stopVisualization() {
+    if (this.animationId) {
+      cancelAnimationFrame(this.animationId);
+      this.animationId = null;
     }
-
-    stopVisualization() {
-        if (this.animationId) {
-            cancelAnimationFrame(this.animationId);
-            this.animationId = null;
+    if (this.elements && this.elements.trackInfo) {
+      this.elements.trackInfo.classList.remove('playing');
+    }
+  }
+  
+  animate() {
+    this.animationId = requestAnimationFrame(() => this.animate());
+    
+    if (this.analyser && this.dataArray) {
+      this.analyser.getByteFrequencyData(this.dataArray);
+      
+      if (this.mutationEnabled) {
+        this.mutationTimer++;
+        if (this.mutationTimer >= this.mutationInterval) {
+          this.mutateSettings();
+          this.mutationTimer = 0;
         }
+      }
+      
+      if (this.ctx && this.canvas) {
+        this.render(this.ctx, this.dataArray, this.canvas.width / devicePixelRatio, this.canvas.height / devicePixelRatio);
+      }
     }
-
-    animate() {
-        this.animationId = requestAnimationFrame(() => this.animate());
-        if (this.analyser && this.dataArray) {
-            this.analyser.getByteFrequencyData(this.dataArray);
+  }
+  
+  buildVisualizerSettings() {
+    const container = document.getElementById('visualizerSettings');
+    if (!container) return;
+    
+    container.innerHTML = '';
+    
+    const schema = this.constructor.getSettingsSchema();
+    if (!schema) return;
+    
+    const group = document.createElement('div');
+    group.className = 'setting-group';
+    
+    const title = document.createElement('h4');
+    title.textContent = schema.name;
+    group.appendChild(title);
+    
+    Object.entries(schema.settings).forEach(([key, setting]) => {
+      const item = this.createSettingItem(key, setting);
+      group.appendChild(item);
+    });
+    
+    container.appendChild(group);
+  }
+  
+  createSettingItem(key, setting) {
+    const item = document.createElement('div');
+    item.className = 'setting-item';
+    
+    const label = document.createElement('label');
+    label.textContent = setting.label;
+    label.setAttribute('for', key);
+    item.appendChild(label);
+    
+    let input, valueDisplay;
+    
+    switch (setting.type) {
+      case 'range':
+        input = document.createElement('input');
+        input.type = 'range';
+        input.id = key;
+        input.min = setting.min;
+        input.max = setting.max;
+        input.value = setting.default;
+        input.step = setting.step || 1;
+        
+        valueDisplay = document.createElement('span');
+        valueDisplay.id = key + 'Value';
+        valueDisplay.textContent = setting.default + (setting.unit || '');
+        
+        input.addEventListener('input', (e) => {
+          const value = parseInt(e.target.value);
+          valueDisplay.textContent = value + (setting.unit || '');
+          this.setSetting(key, value);
+        });
+        
+        item.appendChild(input);
+        item.appendChild(valueDisplay);
+        break;
+        
+      case 'checkbox':
+        input = document.createElement('input');
+        input.type = 'checkbox';
+        input.id = key;
+        input.checked = setting.default;
+        
+        // Add mutation status indicator for mutateMode
+        if (key === 'mutateMode') {
+          const statusSpan = document.createElement('span');
+          statusSpan.className = 'mutation-status';
+          statusSpan.style.cssText = 'font-size: 11px; margin-left: 5px;';
+          item.appendChild(statusSpan);
+        }
+        
+        input.addEventListener('change', (e) => {
+          if (key === 'mutateMode') {
+            this.mutationEnabled = e.target.checked;
+            this.mutationTimer = 0;
+            console.log('Mutation mode:', this.mutationEnabled ? 'ON' : 'OFF');
             
-            // Handle mutations (simplified!)
-            if (this.mutationEnabled) {
-                this.mutationTimer++;
-                if (this.mutationTimer >= this.mutationInterval) {
-                    this.mutateSettings();
-                    this.mutationTimer = 0;
-                }
+            // Update mutation status indicator
+            const statusSpan = item.querySelector('.mutation-status');
+            if (statusSpan) {
+              statusSpan.textContent = this.mutationEnabled ? ' 🎲 ACTIVE' : '';
+              statusSpan.style.color = this.mutationEnabled ? '#6366f1' : '';
+              statusSpan.style.fontWeight = this.mutationEnabled ? 'bold' : '';
             }
-            
-            this.render();
+          } else {
+            this.setSetting(key, e.target.checked);
+          }
+        });
+        
+        item.appendChild(input);
+        break;
+        
+      case 'select':
+        input = document.createElement('select');
+        input.id = key;
+        
+        setting.options.forEach(option => {
+          const optionElement = document.createElement('option');
+          optionElement.value = option.value;
+          optionElement.textContent = option.label;
+          if (option.value === setting.default) {
+            optionElement.selected = true;
+          }
+          input.appendChild(optionElement);
+        });
+        
+        input.addEventListener('change', (e) => {
+          this.setSetting(key, e.target.value);
+        });
+        
+        item.appendChild(input);
+        break;
+    }
+    
+    return item;
+  }
+  
+  mutateSettings() {
+    window.VisualizerRegistry.applyMutations(this);
+  }
+
+  updateUIControl(key, newValue, highlight = false) {
+    window.VisualizerRegistry.updateUIControl(this, key, newValue, highlight);
+  }
+  
+  highlightMutatedControl(element, key) {
+    const settingItem = element.closest('.setting-item');
+    if (!settingItem) return;
+    
+    // Add mutation highlight class
+    settingItem.classList.add('mutated');
+    
+    // Create a brief flash effect
+    settingItem.style.background = 'rgba(99, 102, 241, 0.3)';
+    settingItem.style.borderRadius = '4px';
+    settingItem.style.transition = 'all 0.3s ease';
+    
+    // Show mutation indicator
+    let indicator = settingItem.querySelector('.mutation-indicator');
+    if (!indicator) {
+      indicator = document.createElement('span');
+      indicator.className = 'mutation-indicator';
+      indicator.textContent = '🎲';
+      indicator.style.cssText = `
+        margin-left: 8px;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        font-size: 12px;
+      `;
+      settingItem.appendChild(indicator);
+    }
+    
+    // Animate the indicator
+    indicator.style.opacity = '1';
+    
+    // Remove effects after delay
+    setTimeout(() => {
+      settingItem.style.background = '';
+      if (indicator) {
+        indicator.style.opacity = '0';
+      }
+    }, 1000);
+    
+    // Remove indicator after animation
+    setTimeout(() => {
+      settingItem.classList.remove('mutated');
+      if (indicator && indicator.parentNode) {
+        indicator.parentNode.removeChild(indicator);
+      }
+    }, 1300);
+  }
+  
+  resetVisualizerSettings() {
+    window.VisualizerRegistry.resetToDefaults(this);
+  }
+  
+  toggleSettings() {
+    if (this.elements && this.elements.settingsPanel) {
+      this.elements.settingsPanel.classList.toggle('hidden');
+    }
+  }
+  
+  closeSettings() {
+    if (this.elements && this.elements.settingsPanel) {
+      this.elements.settingsPanel.classList.add('hidden');
+    }
+  }
+  
+  onCanvasResize(width, height) {
+    // Handle canvas resize if needed
+    // This method is called when the canvas is resized
+  }
+  
+  static getSettingsSchema() {
+    return {
+      name: 'Bar Visualizer',
+      settings: {
+        barCount: {
+          type: 'range',
+          label: 'Bar Count',
+          min: 16,
+          max: 128,
+          default: 64,
+          step: 16,
+          unit: ''
+        },
+        smoothing: {
+          type: 'range',
+          label: 'Smoothing',
+          min: 0,
+          max: 95,
+          default: 80,
+          step: 5,
+          unit: '%'
+        },
+        peakDots: {
+          type: 'checkbox',
+          label: 'Peak Dots',
+          default: true
+        },
+        colorScheme: {
+          type: 'select',
+          label: 'Color Scheme',
+          options: [
+            { value: 'purple', label: 'Purple Gradient' },
+            { value: 'rainbow', label: 'Rainbow' },
+            { value: 'fire', label: 'Fire' },
+            { value: 'ocean', label: 'Ocean' },
+            { value: 'neon', label: 'Neon Green' },
+            { value: 'sunset', label: 'Sunset' },
+            { value: 'plasma', label: 'Plasma' },
+            { value: 'ice', label: 'Ice Blue' }
+          ],
+          default: 'purple'
+        },
+        sensitivity: {
+          type: 'range',
+          label: 'Sensitivity',
+          min: 50,
+          max: 200,
+          default: 100,
+          step: 10,
+          unit: '%'
+        },
+        backgroundColor: {
+          type: 'select',
+          label: 'Background',
+          options: [
+            { value: 'dark', label: 'Dark Gradient' },
+            { value: 'black', label: 'Pure Black' },
+            { value: 'navy', label: 'Deep Navy' },
+            { value: 'purple', label: 'Dark Purple' },
+            { value: 'green', label: 'Dark Green' },
+            { value: 'blue', label: 'Electric Blue' },
+            { value: 'red', label: 'Deep Red' },
+            { value: 'orange', label: 'Sunset Orange' },
+            { value: 'teal', label: 'Vibrant Teal' },
+            { value: 'magenta', label: 'Hot Magenta' },
+            { value: 'galaxy', label: 'Galaxy' },
+            { value: 'neon', label: 'Neon Glow' }
+          ],
+          default: 'dark'
+        },
+        mutateMode: {
+          type: 'checkbox',
+          label: 'Mutate Colors',
+          default: false
         }
+      }
+    };
+  }
+  
+  static getMutationSettings() {
+    return {
+      colorScheme: {
+        probability: 0.6,
+        values: ['purple', 'rainbow', 'fire', 'ocean', 'neon', 'sunset', 'plasma', 'ice']
+      },
+      barCount: {
+        probability: 0.3,
+        values: [48, 56, 64, 72, 80]
+      },
+      smoothing: {
+        probability: 0.25,
+        range: { min: 0.7, max: 0.9 }
+      },
+      peakDots: {
+        probability: 0.15,
+        values: [true, false],
+        bias: 0.7
+      },
+      backgroundColor: {
+        probability: 0.5,
+        values: ['dark', 'black', 'navy', 'purple', 'green', 'blue', 'red', 'orange', 'teal', 'magenta', 'galaxy', 'neon']
+      }
+    };
+  }
+  
+  drawBackground(ctx, width, height) {
+    switch (this.backgroundStyle) {
+      case 'galaxy':
+        const gradient = ctx.createRadialGradient(
+          width/2, height/2, 0,
+          width/2, height/2, Math.max(width, height)/2
+        );
+        gradient.addColorStop(0, '#1a0a2a');
+        gradient.addColorStop(0.5, '#0a0a1a');
+        gradient.addColorStop(1, '#000010');
+        ctx.fillStyle = gradient;
+        break;
+      case 'neon':
+        const neonGradient = ctx.createRadialGradient(
+          width/2, height/2, 0,
+          width/2, height/2, Math.max(width, height)/2
+        );
+        neonGradient.addColorStop(0, '#0a2a0a');
+        neonGradient.addColorStop(0.7, '#051505');
+        neonGradient.addColorStop(1, '#000a00');
+        ctx.fillStyle = neonGradient;
+        break;
+      default:
+        ctx.fillStyle = this.backgroundStyles[this.backgroundStyle] || this.backgroundStyles.dark;
+        break;
     }
-
-    render() {
-        const width = this.canvas.width / devicePixelRatio;
-        const height = this.canvas.height / devicePixelRatio;
-        
-        // Clear canvas
-        this.ctx.fillStyle = '#000000';
-        this.ctx.fillRect(0, 0, width, height);
-        
-        // Draw something based on audio data
-        this.ctx.fillStyle = this.color;
-        const average = this.dataArray.reduce((a, b) => a + b) / this.dataArray.length;
-        const radius = (average / 255) * 100;
-        this.ctx.beginPath();
-        this.ctx.arc(width/2, height/2, radius, 0, Math.PI * 2);
-        this.ctx.fill();
+    
+    ctx.fillRect(0, 0, width, height);
+  }
+  
+  createGradient(ctx, width, height) {
+    const gradient = ctx.createLinearGradient(0, height, 0, 0);
+    gradient.addColorStop(0, this.colors.primary);
+    gradient.addColorStop(0.5, this.colors.secondary);
+    gradient.addColorStop(1, this.colors.accent);
+    return gradient;
+  }
+  
+  render(ctx, dataArray, width, height) {
+    // Draw background first
+    this.drawBackground(ctx, width, height);
+    
+    // Calculate bar dimensions
+    this.barWidth = (width - (this.bars - 1) * this.barSpacing) / this.bars;
+    
+    // Create gradient if needed
+    if (!this.gradient) {
+      this.gradient = this.createGradient(ctx, width, height);
     }
-
-    static getSettingsSchema() {
-        return {
-            name: 'Simple Visualizer',
-            settings: {
-                color: {
-                    type: 'select',
-                    label: 'Color',
-                    options: [
-                        { value: '#ff0000', label: 'Red' },
-                        { value: '#00ff00', label: 'Green' },
-                        { value: '#0000ff', label: 'Blue' }
-                    ],
-                    default: '#ff0000'
-                },
-                mutateMode: {
-                    type: 'checkbox',
-                    label: 'Mutate Colors',
-                    default: false
-                }
-            }
-        };
+    
+    // Process frequency data
+    const barHeights = this.processFrequencyData(dataArray, height);
+    
+    // Draw bars
+    this.drawBars(ctx, barHeights, width, height);
+    
+    // Draw peak dots
+    this.drawPeakDots(ctx, barHeights, height);
+    
+    // Update peak dots
+    this.updatePeakDots(barHeights);
+  }
+  
+  processFrequencyData(dataArray, height) {
+    const barHeights = [];
+    const dataStep = Math.floor(dataArray.length / this.bars);
+    
+    for (let i = 0; i < this.bars; i++) {
+      let sum = 0;
+      const start = i * dataStep;
+      const end = Math.min(start + dataStep, dataArray.length);
+      
+      for (let j = start; j < end; j++) {
+        sum += dataArray[j];
+      }
+      
+      const average = sum / (end - start);
+      let normalizedHeight = (average / 255) * this.sensitivity;
+      normalizedHeight = Math.min(1, normalizedHeight);
+      normalizedHeight = Math.pow(normalizedHeight, 0.7);
+      
+      const smoothedHeight = this.previousHeights[i] * this.smoothing + 
+                 normalizedHeight * (1 - this.smoothing);
+      
+      this.previousHeights[i] = smoothedHeight;
+      barHeights[i] = smoothedHeight * height * 0.8;
     }
-
-    static getMutationSettings() {
-        return {
-            color: {
-                probability: 0.6,
-                values: ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff']
-            }
-        };
+    
+    return barHeights;
+  }
+  
+  drawBars(ctx, barHeights, width, height) {
+    ctx.fillStyle = this.gradient;
+    
+    for (let i = 0; i < this.bars; i++) {
+      const x = i * (this.barWidth + this.barSpacing);
+      const barHeight = barHeights[i];
+      const y = height - barHeight;
+      
+      ctx.fillRect(x, y, this.barWidth, barHeight);
+      
+      if (barHeight > height * 0.6) {
+        ctx.shadowColor = this.colors.accent;
+        ctx.shadowBlur = 10;
+        ctx.fillRect(x, y, this.barWidth, barHeight);
+        ctx.shadowBlur = 0;
+      }
     }
-
-    setSetting(key, value) {
-        if (key === 'color') {
-            this.color = value;
-        }
+  }
+  
+  drawPeakDots(ctx, barHeights, height) {
+    if (!this.peakDotsEnabled) return;
+    
+    ctx.fillStyle = this.colors.peak;
+    
+    for (let i = 0; i < this.bars; i++) {
+      const x = i * (this.barWidth + this.barSpacing) + this.barWidth / 2;
+      const peakY = height - this.peakDots[i];
+      
+      if (this.peakDots[i] > 0) {
+        ctx.beginPath();
+        ctx.arc(x, peakY, 2, 0, 2 * Math.PI);
+        ctx.fill();
+      }
     }
-
-    // Delegate to the registry!
-    mutateSettings() {
-        window.VisualizerRegistry.applyMutations(this);
+  }
+  
+  updatePeakDots(barHeights) {
+    for (let i = 0; i < this.bars; i++) {
+      if (barHeights[i] > this.peakDots[i]) {
+        this.peakDots[i] = barHeights[i];
+      } else {
+        this.peakDots[i] = Math.max(0, this.peakDots[i] - this.peakFallSpeed);
+      }
     }
-
-    updateUIControl(key, newValue, highlight = false) {
-        window.VisualizerRegistry.updateUIControl(this, key, newValue, highlight);
+  }
+  
+  setSetting(key, value) {
+    switch (key) {
+      case 'barCount':
+        this.setBarCount(parseInt(value));
+        break;
+      case 'smoothing':
+        this.setSmoothing(value / 100);
+        break;
+      case 'peakDots':
+        this.setPeakDots(value);
+        break;
+      case 'colorScheme':
+        this.setColorScheme(value);
+        break;
+      case 'sensitivity':
+        this.setSensitivity(value / 100);
+        break;
+      case 'backgroundColor':
+        this.setBackgroundStyle(value);
+        break;
     }
-
-    resetVisualizerSettings() {
-        window.VisualizerRegistry.resetToDefaults(this);
+  }
+  
+  setBarCount(count) {
+    this.bars = Math.max(16, Math.min(128, count));
+    this.previousHeights = new Array(this.bars).fill(0);
+    this.peakDots = new Array(this.bars).fill(0);
+  }
+  
+  setSmoothing(value) {
+    this.smoothing = Math.max(0, Math.min(0.95, value));
+  }
+  
+  setPeakDots(enabled) {
+    this.peakDotsEnabled = enabled;
+  }
+  
+  setColorScheme(schemeName) {
+    if (this.colorSchemes[schemeName]) {
+      this.colors = this.colorSchemes[schemeName];
+      this.gradient = null;
     }
-
-    // Implement this for visual feedback of mutations
-    highlightMutatedControl(element, key) {
-        const settingItem = element.closest('.setting-item');
-        if (!settingItem) return;
-        
-        settingItem.style.background = 'rgba(99, 102, 241, 0.3)';
-        settingItem.style.borderRadius = '4px';
-        settingItem.style.transition = 'all 0.3s ease';
-        
-        setTimeout(() => {
-            settingItem.style.background = '';
-        }, 1000);
-    }
-
-    // REQUIRED UI integration methods (must be implemented in every visualizer)
-    // These are called directly by vizwiz.js. Your visualizer WILL break if omitted
-    // Rewite according to your implementation
-    buildVisualizerSettings() { /* ... */ }
-    createSettingItem(key, setting) { /* ... */ }
-    toggleSettings() { /* ... */ }
-    closeSettings() { /* ... */ }
-    onCanvasResize(width, height) { /* ... */ }
+  }
+  
+  setSensitivity(value) {
+    this.sensitivity = Math.max(0.1, Math.min(3.0, value));
+  }
+  
+  setBackgroundStyle(style) {
+    this.backgroundStyle = style;
+  }
 }
 
-// Register the visualizer
 if (window.VisualizerRegistry) {
-    window.VisualizerRegistry.register('simple', 'Simple Circle', SimpleVisualizer);
+  window.VisualizerRegistry.register('bars', 'Vertical Bars', barsVisualizer);
 }
-
-AVAILABLE UTILITIES:
-====================
-
-The VisualizerRegistry provides these utilities to simplify development:
-
-window.VisualizerRegistry.cleanValue(value, step)
-  - Automatically rounds floating point numbers to appropriate precision
-  - Based on the step value from settings schema
-
-window.VisualizerRegistry.updateUIControl(visualizer, key, newValue, highlight)
-  - Updates UI controls with properly formatted values
-  - Handles range sliders, checkboxes, and select elements
-  - Automatically applies number cleaning for range inputs
-
-window.VisualizerRegistry.applyMutations(visualizer)
-  - Applies random mutations based on getMutationSettings()
-  - Automatically updates UI controls with visual feedback
-  - Handles all the mutation logic and logging
-
-window.VisualizerRegistry.resetToDefaults(visualizer)
-  - Resets all settings to their default values
-  - Updates all UI controls to match
-  - Disables mutation mode
-
-TIPS:
-=====
-
-- Use devicePixelRatio for high-DPI displays: canvas.width / devicePixelRatio
-- Audio data is in dataArray as values 0-255
-- Use requestAnimationFrame for smooth 60fps animation
-- Implement mutation system for dynamic, evolving visuals
-- Cache expensive calculations when possible
-- Test on different screen sizes and audio types
-- Use ctx.save() and ctx.restore() for complex transformations
-- Consider performance - avoid creating objects in animation loops
-- Take advantage of the centralized utilities to reduce boilerplate code
-- Number formatting and UI updates are handled automatically by the registry
