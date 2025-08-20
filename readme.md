@@ -40,7 +40,7 @@ Transform your music into stunning visual experiences! VizWiz is a lightweight, 
 Provide a copy of `vizwiz.txt` to an AI, along with a description of the effects and features you want your visualiser to have, including any user settings you would like to be made available. Or, write your own using the same information. Once complete save the new file in the *vizwiz* folder and add a link at the bottom of the `index.html` file (where commented) like this:
 
 ```
-<script src='newviz.viz.js'></script>
+<script src='visualizers/newviz.viz.js'></script>
 ```
 
 For the best results ask your AI to use different colours from the example provided, and to be creative with your idea. Report any errors back to your AI for correcting - if necessary offer other visualizer examples from this distribution as further guidance.
@@ -48,19 +48,21 @@ For the best results ask your AI to use different colours from the example provi
 ### Project Structure
 ```
 vizwiz/
-├── index.html            # Main HTML application
-├── vizwiz.js             # Core JavaScript engine
-├── vizwiz.css            # CSS Styling
-├── vizwiz.txt            # Visualizer development guide
-├── bars.viz.js           # Vertical Bars visualizer      (Claude Sonnet 4)
-├── blobs.viz.js          # Blobby Blobs visualizer       (Deepseek R1)
-├── bouncer.viz.js        # Big Bouncer visualizer        (Grok 4)
-├── fractal.viz.js        # Fractal Dreams visualizer     (Gemini 2.5 Pro)
-├── groove.viz.js         # Groovy Groove visualizer      (Qwen3-235B-A22B-2507)
-├── kaleidoscope.viz.js   # Kaleidoscope visualizer       (Claude Sonnet 4)
-├── oscilloscope.viz.js   # Oscilloscope visualizer       (ChatGPT 5 Fast)
-├── plasma.viz.js         # Plasma Flow visualizer        (Claude Sonnet 4)
-└── README.md             # This readme file
+├── index.html                # Main HTML application
+├── vizwiz.js                 # Core JavaScript engine
+├── vizwiz.css                # CSS Styling
+├── vizwiz.txt                # Visualizer development guide
+├── readme.md                 # This readme file
+├── vizwiz.png                # Favicon
+└── Visualizers/
+    ├── bars.viz.js           # Bars and Bars    (Claude Sonnet 4)
+    ├── blobs.viz.js          # Blobby Blobs     (Deepseek R1)
+    ├── bouncer.viz.js        # Big Bouncer      (Grok 4)
+    ├── fractal.viz.js        # Fractal Dreams   (Gemini 2.5 Pro)
+    ├── groove.viz.js         # Groovy Groove    (Qwen3-235B-A22B-2507)
+    ├── kaleidoscope.viz.js   # Kaleidoscope     (Claude Sonnet 4)
+    ├── oscilloscope.viz.js   # Oscilloscope     (ChatGPT 5 Fast)
+    └── plasma.viz.js         # Plasma Flow      (Claude Sonnet 4)
 ```
 
 ### Ideas for New Visualizers

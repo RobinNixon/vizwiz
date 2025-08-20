@@ -601,5 +601,5 @@ class BarsVisualizer {
 }
 
 if (window.VisualizerRegistry) {
-  window.VisualizerRegistry.register('bars', 'Vertical Bars', BarsVisualizer);
+  window.VisualizerRegistry.register('bars', 'Bars and Bars', BarsVisualizer);
 }

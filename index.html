@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VizWiz 1.0</title>
     <link rel="stylesheet" href="vizwiz.css">
+    <link rel="icon" type="image/ico" href="vizwiz.png">
   </head>
   <body>
     <div id="app">
@@ -47,8 +48,13 @@
       <div id="visualizerContainer">
         <canvas id="visualizerCanvas"></canvas>
         <div id="trackInfo">
-          <h2 id="trackTitle">Load a music file to begin</h2>
-          <p id="trackDetails">Drag & drop or click "Load Music"</p>
+          <h2 id="trackTitle">
+            <div style='font-size:.65em; color:#0df'>
+              VizWiz &copy; 2025 Robin Nixon
+            </div>
+            Load a music file to begin
+          </h2>
+          <p id="trackDetails">Drag &amp; drop or click "Load Music"</p>
         </div>
       </div>
       <div id="settingsPanel" class="hidden">
@@ -68,13 +74,13 @@
     <script src='vizwiz.js'></script>
 
     <!-- Load visualizations here -->
-    <script src='bars.viz.js'></script>
-    <script src='blobs.viz.js'></script>
-    <script src='bouncer.viz.js'></script>
-    <script src='fractal.viz.js'></script>
-    <script src='groove.viz.js'></script>
-    <script src='kaleidoscope.viz.js'></script>
-    <script src='plasma.viz.js'></script>
-    <script src='oscilloscope.viz.js'></script>
+    <script src='visualizers/bars.viz.js'></script>
+    <script src='visualizers/blobs.viz.js'></script>
+    <script src='visualizers/bouncer.viz.js'></script>
+    <script src='visualizers/fractal.viz.js'></script>
+    <script src='visualizers/groove.viz.js'></script>
+    <script src='visualizers/kaleidoscope.viz.js'></script>
+    <script src='visualizers/plasma.viz.js'></script>
+    <script src='visualizers/oscilloscope.viz.js'></script>
   </body>
 </html>
