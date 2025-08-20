@@ -39,7 +39,8 @@ Transform your music into stunning visual experiences! VizWiz is a lightweight, 
 
 Provide a copy of `vizwiz.txt` to an AI, along with a description of the effects and features you want your visualiser to have, including any user settings you would like to be made available. Or, write your own using the same information. Once complete save the new file in the *vizwiz* folder and add a link at the bottom of the `index.html` file (where commented) like this:
 
-```&lt;script src='newviz.viz.js'&gt;&lt;/script&gt;
+```
+script src='newviz.viz.js'></script>
 ```
 
 For the best results ask your AI to use different colours from the example provided, and to be creative with your idea. Report any errors back to your AI for correcting - if necessary offer other visualizer examples from this distribution as further guidance.
