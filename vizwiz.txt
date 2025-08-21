@@ -127,31 +127,30 @@ EXAMPLE VISUALIZER: bars.viz.js
 ===============================
 
 class BarsVisualizer {
-// Everything is in this class
+  // Everything is in this class
   constructor() {
-    // Basic values
-    this.bars             = 64;
-    this.barWidth         = 0;
-    this.barSpacing       = 2;
-    this.smoothing        = 0.8;
-    this.previousHeights  = new Array(this.bars).fill(0);
-    this.gradient         = null;
-    this.peakDots         = new Array(this.bars).fill(0);
-    this.peakFallSpeed    = 0.3;
-    this.peakDotsEnabled  = true;
-    this.sensitivity      = 1.0;
-    this.backgroundStyle  = 'dark';
-    
+    this.bars = 64;
+    this.barWidth = 0;
+    this.barSpacing = 2;
+    this.smoothing = 0.8;
+    this.previousHeights = new Array(this.bars).fill(0);
+    this.gradient = null;
+    this.peakDots = new Array(this.bars).fill(0);
+    this.peakFallSpeed = 0.3;
+    this.peakDotsEnabled = true;
+    this.sensitivity = 0.5;
+    this.backgroundStyle = 'dark';
+
     // Animation properties
-    this.animationId      = null;
-    this.analyser         = null;
-    this.dataArray        = null;
-    this.ctx              = null;
-    this.canvas           = null;
+    this.animationId = null;
+    this.analyser = null;
+    this.dataArray = null;
+    this.ctx = null;
+    this.canvas = null;
     
     // Mutation properties
-    this.mutationEnabled  = false;
-    this.mutationTimer    = 0;
+    this.mutationEnabled = false;
+    this.mutationTimer = 0;
     this.mutationInterval = 300;
     
     // UI elements
@@ -159,37 +158,36 @@ class BarsVisualizer {
     
     this.colorSchemes = {
       // Create different colour schemes in each visualizer for variety
-      purple:  { primary: '#6366f1', secondary: '#8b5cf6', accent: '#ec4899', peak: '#f59e0b' },
+      purple: { primary: '#6366f1', secondary: '#8b5cf6', accent: '#ec4899', peak: '#f59e0b' },
       rainbow: { primary: '#ff0000', secondary: '#ffff00', accent: '#00ff00', peak: '#ffffff' },
-      fire:    { primary: '#ff4500', secondary: '#ff6500', accent: '#ffff00', peak: '#ffffff' },
-      ocean:   { primary: '#0066cc', secondary: '#0099ff', accent: '#00ccff', peak: '#ffffff' },
-      neon:    { primary: '#00ff00', secondary: '#00ff88', accent: '#00ffff', peak: '#ffffff' },
-      sunset:  { primary: '#ff6b35', secondary: '#f7931e', accent: '#ffcd3c', peak: '#ffffff' },
-      plasma:  { primary: '#ff0080', secondary: '#ff4080', accent: '#ff8080', peak: '#ffffff' },
-      ice:     { primary: '#4db8ff', secondary: '#80d0ff', accent: '#b3e0ff', peak: '#ffffff' }
+      fire: { primary: '#ff4500', secondary: '#ff6500', accent: '#ffff00', peak: '#ffffff' },
+      ocean: { primary: '#0066cc', secondary: '#0099ff', accent: '#00ccff', peak: '#ffffff' },
+      neon: { primary: '#00ff00', secondary: '#00ff88', accent: '#00ffff', peak: '#ffffff' },
+      sunset: { primary: '#ff6b35', secondary: '#f7931e', accent: '#ffcd3c', peak: '#ffffff' },
+      plasma: { primary: '#ff0080', secondary: '#ff4080', accent: '#ff8080', peak: '#ffffff' },
+      ice: { primary: '#4db8ff', secondary: '#80d0ff', accent: '#b3e0ff', peak: '#ffffff' }
     };
     
     this.backgroundStyles = {
       // Use different background styles in each visualizer for variety
-      dark:    '#0c0c0c',
-      black:   '#000000',
-      navy:    '#0a0a1a',
-      purple:  '#1a0a1a',
-      green:   '#0a1a0a',
-      blue:    '#0a0a2a',
-      red:     '#2a0a0a',
-      orange:  '#2a1a0a',
-      teal:    '#0a2a2a',
+      dark: '#0c0c0c',
+      black: '#000000',
+      navy: '#0a0a1a',
+      purple: '#1a0a1a',
+      green: '#0a1a0a',
+      blue: '#0a0a2a',
+      red: '#2a0a0a',
+      orange: '#2a1a0a',
+      teal: '#0a2a2a',
       magenta: '#2a0a2a',
-      galaxy:  'gradient',
-      neon:    'gradient'
+      galaxy: 'gradient',
+      neon: 'gradient'
     };
     
     this.colors = this.colorSchemes.purple;
   }
   
   init(elements) {
-    // Initialise all the elements
     this.elements = elements;
     this.buildVisualizerSettings();
     
@@ -200,6 +198,7 @@ class BarsVisualizer {
         this.resetVisualizerSettings();
       });
     }
+    // Ensure settings display correctly
     this.resetVisualizerSettings();
   }
   
@@ -233,7 +232,7 @@ class BarsVisualizer {
     if (this.analyser && this.dataArray) {
       this.analyser.getByteFrequencyData(this.dataArray);
       
-      if (this.mutationEnabled) {
+      if (this.mutationEnabled || window.VisualizerRegistry?.globalMutationEnabled) {
         this.mutationTimer++;
         if (this.mutationTimer >= this.mutationInterval) {
           this.mutateSettings();
@@ -291,12 +290,27 @@ class BarsVisualizer {
         input.id = key;
         input.min = setting.min;
         input.max = setting.max;
-        input.value = setting.default;
         input.step = setting.step || 1;
+        
+        // Get the current actual value from the visualizer
+        let currentValue = setting.default;
+        switch (key) {
+          case 'barCount':
+            currentValue = this.bars;
+            break;
+          case 'smoothing':
+            currentValue = this.smoothing * 100; // Convert decimal to percentage for display
+            break;
+          case 'sensitivity':
+            currentValue = this.sensitivity * 100; // Convert decimal to percentage for display
+            break;
+        }
+        
+        input.value = currentValue;
         
         valueDisplay = document.createElement('span');
         valueDisplay.id = key + 'Value';
-        valueDisplay.textContent = setting.default + (setting.unit || '');
+        valueDisplay.textContent = currentValue + (setting.unit || '');
         
         input.addEventListener('input', (e) => {
           const value = setting.step < 1 ? parseFloat(e.target.value) : parseInt(e.target.value);
@@ -312,13 +326,28 @@ class BarsVisualizer {
         input = document.createElement('input');
         input.type = 'checkbox';
         input.id = key;
-        input.checked = setting.default;
+        
+        // Get the current actual value from the visualizer
+        let currentChecked = setting.default;
+        switch (key) {
+          case 'peakDots':
+            currentChecked = this.peakDotsEnabled;
+            break;
+          case 'mutateMode':
+            currentChecked = this.mutationEnabled;
+            break;
+        }
+        
+        input.checked = currentChecked;
         
         // Add mutation status indicator for mutateMode
         if (key === 'mutateMode') {
           const statusSpan = document.createElement('span');
           statusSpan.className = 'mutation-status';
           statusSpan.style.cssText = 'font-size: 11px; margin-left: 5px;';
+          statusSpan.textContent = currentChecked ? ' 🎲 ACTIVE' : '';
+          statusSpan.style.color = currentChecked ? '#6366f1' : '';
+          statusSpan.style.fontWeight = currentChecked ? 'bold' : '';
           item.appendChild(statusSpan);
         }
         
@@ -347,11 +376,28 @@ class BarsVisualizer {
         input = document.createElement('select');
         input.id = key;
         
+        // Get the current actual value from the visualizer
+        let currentSelected = setting.default;
+        switch (key) {
+          case 'colorScheme':
+            // Find the current color scheme by comparing color objects
+            for (const [schemeName, colors] of Object.entries(this.colorSchemes)) {
+              if (this.colors === colors) {
+                currentSelected = schemeName;
+                break;
+              }
+            }
+            break;
+          case 'backgroundColor':
+            currentSelected = this.backgroundStyle;
+            break;
+        }
+        
         setting.options.forEach(option => {
           const optionElement = document.createElement('option');
           optionElement.value = option.value;
           optionElement.textContent = option.label;
-          if (option.value === setting.default) {
+          if (option.value === currentSelected) {
             optionElement.selected = true;
           }
           input.appendChild(optionElement);
@@ -456,7 +502,7 @@ class BarsVisualizer {
   static getSettingsSchema() {
     // Return the schema
     return {
-      name: 'Bar Visualizer',
+      name: 'Bar and Bars',
       settings: {
         barCount: {
           type: 'range',
@@ -499,10 +545,10 @@ class BarsVisualizer {
         sensitivity: {
           type: 'range',
           label: 'Sensitivity',
-          min: 50,
-          max: 200,
-          default: 100,
-          step: 10,
+          min: 25,
+          max: 100,
+          default: 50,
+          step: 5,
           unit: '%'
         },
         backgroundColor: {
@@ -602,10 +648,11 @@ class BarsVisualizer {
   
   render(ctx, dataArray, width, height) {
     // Render frame
+    // Draw background first
     this.drawBackground(ctx, width, height);
     
-    // Calculate bar dimensions
-    this.barWidth = (width - (this.bars - 1) * this.barSpacing) / this.bars;
+    // Simply divide the full width by number of bars
+    this.barWidth = width / this.bars;
     
     // Create gradient if needed
     if (!this.gradient) {
@@ -619,7 +666,7 @@ class BarsVisualizer {
     this.drawBars(ctx, barHeights, width, height);
     
     // Draw peak dots
-    this.drawPeakDots(ctx, barHeights, height);
+    this.drawPeakDots(ctx, barHeights, width, height);
     
     // Update peak dots
     this.updatePeakDots(barHeights);
@@ -628,27 +675,42 @@ class BarsVisualizer {
   processFrequencyData(dataArray, height) {
     // Process audio stream
     const barHeights = [];
-    const dataStep = Math.floor(dataArray.length / this.bars);
     
+    // Covers roughly 20Hz to 8kHz where most music content lives
     for (let i = 0; i < this.bars; i++) {
-      let sum = 0;
-      const start = i * dataStep;
-      const end = Math.min(start + dataStep, dataArray.length);
+      // Create a logarithmic curve that heavily emphasizes lower frequencies
+      const logIndex = Math.pow(i / (this.bars - 1), 2.8); // Aggressive curve
+      const maxFreqIndex = Math.floor(dataArray.length * 0.6); // Lower 60% of spectrum
+      const dataIndex = Math.floor(logIndex * maxFreqIndex);
       
-      for (let j = start; j < end; j++) {
+      // Take a small range around each mapped frequency for smoothing
+      const range = Math.max(1, Math.floor(maxFreqIndex / this.bars / 3));
+      const startIndex = Math.max(0, dataIndex - range);
+      const endIndex = Math.min(maxFreqIndex, dataIndex + range);
+      
+      let sum = 0;
+      let count = 0;
+      
+      for (let j = startIndex; j <= endIndex; j++) {
         sum += dataArray[j];
+        count++;
       }
       
-      const average = sum / (end - start);
+      const average = sum / count;
       let normalizedHeight = (average / 255) * this.sensitivity;
+      
+      // Apply progressive boost to higher frequencies to make them more visible
+      const frequencyBoost = 1 + (i / this.bars) * 0.8; // Stronger boost for higher bars
+      normalizedHeight *= frequencyBoost;
+      
       normalizedHeight = Math.min(1, normalizedHeight);
-      normalizedHeight = Math.pow(normalizedHeight, 0.7);
+      normalizedHeight = Math.pow(normalizedHeight, 0.65); // Slightly less compression
       
       const smoothedHeight = this.previousHeights[i] * this.smoothing + 
                  normalizedHeight * (1 - this.smoothing);
       
       this.previousHeights[i] = smoothedHeight;
-      barHeights[i] = smoothedHeight * height * 0.8;
+      barHeights[i] = smoothedHeight * height;
     }
     
     return barHeights;
@@ -659,29 +721,34 @@ class BarsVisualizer {
     ctx.fillStyle = this.gradient;
     
     for (let i = 0; i < this.bars; i++) {
-      const x = i * (this.barWidth + this.barSpacing);
+      // Each bar gets exactly 1/bars of the total width
+      const x = i * this.barWidth;
       const barHeight = barHeights[i];
       const y = height - barHeight;
       
-      ctx.fillRect(x, y, this.barWidth, barHeight);
+      // Leave 1px gap between bars by reducing bar width slightly
+      const actualBarWidth = Math.max(1, this.barWidth - 1);
+      
+      ctx.fillRect(x, y, actualBarWidth, barHeight);
       
       if (barHeight > height * 0.6) {
         ctx.shadowColor = this.colors.accent;
         ctx.shadowBlur = 10;
-        ctx.fillRect(x, y, this.barWidth, barHeight);
+        ctx.fillRect(x, y, actualBarWidth, barHeight);
         ctx.shadowBlur = 0;
       }
     }
   }
-  
-  drawPeakDots(ctx, barHeights, height) {
+
+  drawPeakDots(ctx, barHeights, width, height) {
     // Draw peak dots
     if (!this.peakDotsEnabled) return;
     
     ctx.fillStyle = this.colors.peak;
     
     for (let i = 0; i < this.bars; i++) {
-      const x = i * (this.barWidth + this.barSpacing) + this.barWidth / 2;
+      // Center dot in each bar's allocated space
+      const x = i * this.barWidth + this.barWidth / 2;
       const peakY = height - this.peakDots[i];
       
       if (this.peakDots[i] > 0) {
@@ -728,7 +795,7 @@ class BarsVisualizer {
   }
   
   setBarCount(count) {
-    // Numberof bars
+    // Number of bars
     this.bars = Math.max(16, Math.min(128, count));
     this.previousHeights = new Array(this.bars).fill(0);
     this.peakDots = new Array(this.bars).fill(0);
@@ -753,8 +820,8 @@ class BarsVisualizer {
   }
   
   setSensitivity(value) {
-    // Sensitivity to audio
-    this.sensitivity = Math.max(0.1, Math.min(3.0, value));
+     // Sensitivity to audio
+     this.sensitivity = Math.max(0.1, Math.min(3.0, value));
   }
   
   setBackgroundStyle(style) {
@@ -764,6 +831,6 @@ class BarsVisualizer {
 }
 
 if (window.VisualizerRegistry) {
-  // Register visualizer
-  window.VisualizerRegistry.register('bars', 'Vertical Bars', BarsVisualizer);
+   // Register visualizer
+   window.VisualizerRegistry.register('bars', 'Bars and Bars', BarsVisualizer);
 }
