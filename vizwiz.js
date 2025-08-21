@@ -1,4 +1,4 @@
-// === UPDATED vizwiz.js ===
+// === ENHANCED vizwiz.js with Settings Memory ===
 
 class VizWiz {
   constructor() {
@@ -10,12 +10,20 @@ class VizWiz {
     this.ctx = null;
     this.currentVisualizer = null;
     this.visualizers = new Map();
+    this.visualizerInstances = new Map(); // Store instances to preserve settings
+    this.savedSettings = new Map(); // Store settings for each visualizer
     this.isPlaying = false;
     this.isFullscreen = false;
     this.repeatMode = 'none';
     this.dataArray = null;
     this.bufferLength = 0;
     this.elements = {};
+    
+    // Random visualizer switching
+    this.randomMode = false;
+    this.randomTimer = 0;
+    this.randomInterval = 1200; // Switch every 20 seconds (1200 frames at 60fps)
+    this.forceMutateMode = false;
   }
   
   init() {
@@ -24,7 +32,19 @@ class VizWiz {
     this.setupEventListeners();
     this.setupDragAndDrop();
     this.registerVisualizers();
+    this.startGlobalAnimationLoop();
     // console.log('VizWiz initialized successfully');
+  }
+  
+  // Global animation loop for random mode and other global effects
+  startGlobalAnimationLoop() {
+    const loop = () => {
+      // Update random mode switching
+      this.updateRandomMode();
+      
+      requestAnimationFrame(loop);
+    };
+    loop();
   }
   
   setupElements() {
@@ -40,6 +60,7 @@ class VizWiz {
       duration: document.getElementById('duration'),
       volumeSlider: document.getElementById('volumeSlider'),
       visualizerSelect: document.getElementById('visualizerSelect'),
+      randomCheckbox: document.getElementById('randomCheckbox'),
       settingsBtn: document.getElementById('settingsBtn'),
       fullscreenBtn: document.getElementById('fullscreenBtn'),
       trackTitle: document.getElementById('trackTitle'),
@@ -98,6 +119,32 @@ class VizWiz {
     
     this.elements.visualizerSelect.addEventListener('change', (e) => {
       this.switchVisualizer(e.target.value);
+    });
+    
+    // Random mode checkbox (now in HTML)
+    this.elements.randomCheckbox.addEventListener('change', (e) => {
+      this.randomMode = e.target.checked;
+      this.randomTimer = 0; // Reset timer
+      
+      // Auto-enable force mutate when random is on for maximum variety
+      this.forceMutateMode = this.randomMode;
+      
+      // Set global mutation flag
+      window.VisualizerRegistry.globalMutationEnabled = this.forceMutateMode;
+      
+      // Apply to all existing visualizer instances
+      if (this.forceMutateMode) {
+        this.enableMutationOnAllVisualizers();
+      }
+      
+      // Apply to current visualizer immediately
+      if (this.currentVisualizer && this.currentVisualizer.setSetting) {
+        this.currentVisualizer.setSetting('mutateMode', this.forceMutateMode);
+        this.updateUIFromVisualizer(this.currentVisualizer);
+      }
+      
+      // console.log('Random visualizer mode:', this.randomMode ? 'ON' : 'OFF');
+      // console.log('Auto force mutate mode:', this.forceMutateMode ? 'ON' : 'OFF');
     });
     
     this.elements.settingsBtn.addEventListener('click', () => {
@@ -178,7 +225,7 @@ class VizWiz {
       
       registeredVisualizers.forEach(({ id, name, class: VisualizerClass }) => {
         this.visualizers.set(id, VisualizerClass);
-        // console.log(`Registered ${id} visualizer: ${name}`);
+      // console.log(`Registered ${id} visualizer: ${name}`);
       });
       
       // Populate the dropdown
@@ -207,8 +254,221 @@ class VizWiz {
     // console.log(`Populated dropdown with ${visualizers.length} visualizers`);
   }
   
+  // Enable mutation mode on all visualizer instances
+  enableMutationOnAllVisualizers() {
+    this.visualizerInstances.forEach((visualizer, id) => {
+      if (visualizer.setSetting) {
+        visualizer.setSetting('mutateMode', true);
+        // console.log(`Enabled mutation mode on ${id} visualizer`);
+      }
+    });
+    
+    // Also update saved settings
+    this.savedSettings.forEach((settings, id) => {
+      settings.mutateMode = true;
+    });
+  }
+  
+  // Get a random visualizer ID that's different from current
+  getRandomVisualizerId() {
+    const allIds = Array.from(this.visualizers.keys());
+    if (allIds.length <= 1) return null;
+    
+    const currentId = this.elements.visualizerSelect.value;
+    const availableIds = allIds.filter(id => id !== currentId);
+    
+    return availableIds[Math.floor(Math.random() * availableIds.length)];
+  }
+  
+  // Handle random visualizer switching
+  updateRandomMode() {
+    if (!this.randomMode || !this.isPlaying) return;
+    
+    this.randomTimer++;
+    if (this.randomTimer >= this.randomInterval) {
+      this.randomInterval = 500 + Math.random() * 1000;
+      const randomId = this.getRandomVisualizerId();
+      if (randomId) {
+        // console.log(`Random switch to: ${randomId}`);
+        this.switchVisualizer(randomId);
+      }
+      this.randomTimer = 0;
+    }
+  }
+  saveCurrentVisualizerSettings() {
+    if (!this.currentVisualizer) return;
+    
+    const currentId = this.elements.visualizerSelect.value;
+    const settings = {};
+    
+    // Get the schema to know what settings to save
+    const schema = this.currentVisualizer.constructor.getSettingsSchema();
+    if (schema && schema.settings) {
+      Object.keys(schema.settings).forEach(key => {
+        // Get the current value from the visualizer instance
+        if (this.currentVisualizer.hasOwnProperty(key)) {
+          settings[key] = this.currentVisualizer[key];
+        }
+      });
+    }
+    
+    this.savedSettings.set(currentId, settings);
+    // console.log(`Saved settings for ${currentId}:`, settings);
+  }
+  
+  // Restore settings for a visualizer
+  restoreVisualizerSettings(visualizer, id) {
+    const savedSettings = this.savedSettings.get(id);
+    if (!savedSettings) return;
+    
+    // console.log(`Restoring settings for ${id}:`, savedSettings);
+    
+    // Apply each saved setting
+    Object.entries(savedSettings).forEach(([key, value]) => {
+      if (visualizer.setSetting) {
+        visualizer.setSetting(key, value);
+      } else {
+        // Fallback: set property directly
+        visualizer[key] = value;
+      }
+    });
+    
+    // Update the UI to reflect the restored settings
+    this.updateUIFromVisualizer(visualizer);
+  }
+  
+  // Update UI controls to match visualizer settings
+  updateUIFromVisualizer(visualizer) {
+    const schema = visualizer.constructor.getSettingsSchema();
+    if (!schema || !schema.settings) return;
+    
+    Object.entries(schema.settings).forEach(([key, setting]) => {
+      const element = document.getElementById(key);
+      if (!element || !visualizer.hasOwnProperty(key)) return;
+      
+      const value = visualizer[key];
+      
+      if (element.type === 'range') {
+        element.value = value;
+        const valueElement = document.getElementById(key + 'Value');
+        if (valueElement) {
+          const displayValue = setting.unit ? value + setting.unit : value;
+          valueElement.textContent = displayValue;
+        }
+      } else if (element.type === 'checkbox') {
+        element.checked = value;
+        
+        // Special handling for mutation mode
+        if (key === 'mutateMode') {
+          const statusSpan = element.closest('.setting-item')?.querySelector('.mutation-status');
+          if (statusSpan) {
+            statusSpan.textContent = value ? ' 🎲 ACTIVE' : '';
+            statusSpan.style.color = value ? '#6366f1' : '';
+            statusSpan.style.fontWeight = value ? 'bold' : '';
+          }
+        }
+      } else if (element.tagName === 'SELECT') {
+        element.value = value;
+      }
+    });
+  }
+  
+  switchVisualizer(id) {
+    const VisualizerClass = this.visualizers.get(id);
+    if (!VisualizerClass) return;
+    
+    // Save current visualizer settings before switching
+    if (this.currentVisualizer) {
+      this.saveCurrentVisualizerSettings();
+      
+      // Stop current visualizer
+      if (this.currentVisualizer.stopVisualization) {
+        this.currentVisualizer.stopVisualization();
+      }
+    }
+    
+    // Check if we already have an instance of this visualizer
+    let visualizer = this.visualizerInstances.get(id);
+    
+    if (!visualizer) {
+      // Create new instance if we don't have one
+      visualizer = new VisualizerClass();
+      this.visualizerInstances.set(id, visualizer);
+      
+      // Initialize the visualizer
+      if (visualizer.init) {
+        visualizer.init(this.elements);
+      }
+      
+      // Apply force mutate mode if enabled
+      if (this.forceMutateMode && visualizer.setSetting) {
+        visualizer.setSetting('mutateMode', true);
+      }
+      
+      // console.log(`Created new instance of ${id} visualizer`);
+    } else {
+      // Reuse existing instance and restore its settings
+      this.restoreVisualizerSettings(visualizer, id);
+      
+      // Apply force mutate mode if enabled (overrides saved settings)
+      if (this.forceMutateMode && visualizer.setSetting) {
+        visualizer.setSetting('mutateMode', true);
+      }
+      
+      // console.log(`Reusing existing instance of ${id} visualizer`);
+    }
+    
+    // Clear the canvas completely when switching
+    this.ctx.fillStyle = '#000000';
+    this.ctx.fillRect(0, 0, this.canvas.width / devicePixelRatio, this.canvas.height / devicePixelRatio);
+    
+    this.currentVisualizer = visualizer;
+    this.elements.visualizerSelect.value = id;
+    
+    // Rebuild settings UI for this visualizer
+    if (this.currentVisualizer.buildVisualizerSettings) {
+      this.currentVisualizer.buildVisualizerSettings();
+      // Update UI to match current settings
+      this.updateUIFromVisualizer(this.currentVisualizer);
+    }
+    
+    // Start visualization if audio is playing
+    if (this.isPlaying && this.currentVisualizer.startVisualization) {
+      this.currentVisualizer.startVisualization(this.analyser, this.dataArray, this.ctx, this.canvas);
+      // Ensure trackInfo stays hidden when switching during playback
+      this.elements.trackInfo.classList.add('playing');
+    }
+    
+    // console.log(`Switched to ${id} visualizer`);
+  }
+  
+  // Add method to clear all saved settings (useful for debugging)
+  clearAllSavedSettings() {
+    this.savedSettings.clear();
+    this.visualizerInstances.clear();
+    // console.log('Cleared all saved settings and instances');
+  }
+  
   loadAudioFile(file, autoPlay = true) {
     try {
+      // Check for unsupported formats first
+      const fileName = file.name.toLowerCase();
+      const fileExtension = fileName.split('.').pop();
+      
+      // List of unsupported formats
+      const unsupportedFormats = ['wma', 'wmv', 'asf'];
+      
+      if (unsupportedFormats.includes(fileExtension)) {
+        this.showUnsupportedFormatMessage(file.name, fileExtension);
+        return;
+      }
+      
+      // Also check MIME type as backup
+      if (file.type && file.type.includes('windows-media')) {
+        this.showUnsupportedFormatMessage(file.name, 'WMA');
+        return;
+      }
+
       // Stop current playback if playing
       if (this.isPlaying) {
         this.audioElement.pause();
@@ -218,7 +478,7 @@ class VizWiz {
           this.currentVisualizer.stopVisualization();
         }
       }
-      
+
       const url = URL.createObjectURL(file);
       this.audioElement.src = url;
       
@@ -249,6 +509,22 @@ class VizWiz {
     }
   }
 
+  showUnsupportedFormatMessage(fileName, format) {
+    // Update the UI to show the error
+    this.elements.trackTitle.textContent = `Unsupported Format: ${fileName}`;
+    this.elements.trackDetails.textContent = `${format.toUpperCase()} files aren't supported by web browsers. Try converting to MP3 first.`;
+    
+    // Disable controls
+    this.elements.playBtn.disabled = true;
+    this.elements.repeatBtn.disabled = true;
+    this.elements.progressBar.disabled = true;
+    this.elements.visualizerSelect.disabled = true;
+    this.elements.settingsBtn.disabled = true;
+    this.elements.fullscreenBtn.disabled = true;
+    
+    // console.warn(`Unsupported audio format: ${format}`);
+  }
+  
   onAudioLoaded() {
     if (!this.audioSource) {
       this.audioSource = this.audioContext.createMediaElementSource(this.audioElement);
@@ -266,7 +542,7 @@ class VizWiz {
     this.elements.duration.textContent = this.formatTime(this.audioElement.duration);
     // console.log('Audio loaded and connected to analyser');
   }
-  
+ 
   async togglePlayback() {
     try {
       if (this.isPlaying) {
@@ -288,42 +564,15 @@ class VizWiz {
         if (this.currentVisualizer && this.currentVisualizer.startVisualization) {
           this.currentVisualizer.startVisualization(this.analyser, this.dataArray, this.ctx, this.canvas);
         }
+        
+        // Reset random timer when starting playback
+        this.randomTimer = 0;
       }
     } catch (error) {
       console.error('Playback error:', error);
     }
   }
   
-  switchVisualizer(id) {
-    const VisualizerClass = this.visualizers.get(id);
-    if (VisualizerClass) {
-      // Stop current visualizer if running
-      if (this.currentVisualizer && this.currentVisualizer.stopVisualization) {
-        this.currentVisualizer.stopVisualization();
-      }
-      
-      // Clear the canvas completely when switching
-      this.ctx.fillStyle = '#000000';
-      this.ctx.fillRect(0, 0, this.canvas.width / devicePixelRatio, this.canvas.height / devicePixelRatio);
-      
-      this.currentVisualizer = new VisualizerClass();
-      this.elements.visualizerSelect.value = id;
-      
-      // Initialize the visualizer with necessary components
-      if (this.currentVisualizer.init) {
-        this.currentVisualizer.init(this.elements);
-      }
-      
-      // Start visualization if audio is playing
-      if (this.isPlaying && this.currentVisualizer.startVisualization) {
-        this.currentVisualizer.startVisualization(this.analyser, this.dataArray, this.ctx, this.canvas);
-        // Ensure trackInfo stays hidden when switching during playback
-        this.elements.trackInfo.classList.add('playing');
-      }
-      
-      // console.log(`Switched to ${id} visualizer`);
-    }
-  }  
   updateProgress() {
     const progress = (this.audioElement.currentTime / this.audioElement.duration) * 100;
     this.elements.progressBar.value = progress;
@@ -447,11 +696,17 @@ class VizWiz {
 document.addEventListener('DOMContentLoaded', () => {
   const vizwiz = new VizWiz();
   vizwiz.init();
+  
+  // Expose vizwiz globally for debugging
+  window.vizwiz = vizwiz;
 });
 
 // Global visualizer registry - create this BEFORE loading visualizers
 window.VisualizerRegistry = {
   visualizers: [],
+  
+  // Global mutation control
+  globalMutationEnabled: false,
   
   register(id, name, visualizerClass) {
     this.visualizers.push({
@@ -556,8 +811,7 @@ window.VisualizerRegistry = {
     mutations.forEach(mutation => mutation.apply());
     
     if (mutations.length > 0) {
-      console.log(`Applied ${mutations.length} mutations:`, 
-        mutations.map(m => `${m.key}=${m.value}`).join(', '));
+      // console.log(`Applied ${mutations.length} mutations:`, mutations.map(m => `${m.key}=${m.value}`).join(', '));
     }
     
     return mutations;

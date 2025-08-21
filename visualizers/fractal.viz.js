@@ -58,6 +58,7 @@ class FractalVisualizer {
   init(elements) {
     this.elements = elements;
     this.buildVisualizerSettings();
+    this.resetVisualizerSettings();
   }
 
   // REQUIRED: Called when audio playback starts
@@ -93,7 +94,7 @@ class FractalVisualizer {
     this.updateAudioLevels();
 
     // Handle mutations if enabled
-    if (this.mutationEnabled) {
+    if (this.mutationEnabled || window.VisualizerRegistry?.globalMutationEnabled) {
       this.mutationTimer++;
       if (this.mutationTimer >= this.mutationInterval) {
         this.mutateSettings();
@@ -276,10 +277,9 @@ class FractalVisualizer {
     window.VisualizerRegistry.updateUIControl(this, key, newValue, highlight);
   }
 
-  // Delegate settings reset to the central registry
   resetVisualizerSettings() {
-    window.VisualizerRegistry.resetToDefaults(this);
-    this.fractals = []; // Also clear fractals on reset
+    setTimeout(() => window.VisualizerRegistry.resetToDefaults(this), 10);
+    //this.fractals = []; // Also clear fractals on reset
   }
 
   // Visual feedback for mutated controls
@@ -374,8 +374,17 @@ class FractalVisualizer {
     return item;
   }
 
-  toggleSettings() { this.elements.settingsPanel.classList.toggle('hidden'); }
-  closeSettings() { this.elements.settingsPanel.classList.add('hidden'); }
+  toggleSettings() {
+    if (this.elements && this.elements.settingsPanel) {
+      this.elements.settingsPanel.classList.toggle('hidden');
+    }
+  }
+  
+  closeSettings() {
+    if (this.elements && this.elements.settingsPanel) {
+      this.elements.settingsPanel.classList.add('hidden');
+    }
+  }
 
   // --- REQUIRED STATIC METHODS ---
 

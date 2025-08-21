@@ -134,6 +134,7 @@ class PlasmaVisualizer {
         this.resetVisualizerSettings();
       });
     }
+    this.resetVisualizerSettings();
   }
   
   startVisualization(analyser, dataArray, ctx, canvas) {
@@ -178,7 +179,7 @@ class PlasmaVisualizer {
       this.analyser.getByteFrequencyData(this.dataArray);
       this.updateAudioData();
       
-      if (this.mutationEnabled) {
+      if (this.mutationEnabled || window.VisualizerRegistry?.globalMutationEnabled) {
         this.mutationTimer++;
         if (this.mutationTimer >= this.mutationInterval) {
           this.mutateSettings();
@@ -512,7 +513,7 @@ class PlasmaVisualizer {
   }
   
   resetVisualizerSettings() {
-    window.VisualizerRegistry.resetToDefaults(this);
+    setTimeout(() => window.VisualizerRegistry.resetToDefaults(this), 10);
   }
   
   toggleSettings() {
@@ -611,7 +612,7 @@ class PlasmaVisualizer {
   
   static getSettingsSchema() {
     return {
-      name: 'Plasma Visualizer',
+      name: 'Plasma',
       settings: {
         resolution: {
           type: 'range',

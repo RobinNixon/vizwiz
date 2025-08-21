@@ -139,6 +139,7 @@ class KaleidoscopeVisualizer {
         this.resetVisualizerSettings();
       });
     }
+    this.resetVisualizerSettings();
   }
   
   startVisualization(analyser, dataArray, ctx, canvas) {
@@ -214,7 +215,7 @@ class KaleidoscopeVisualizer {
       this.analyser.getByteFrequencyData(this.dataArray);
       this.updateAudioData();
       
-      if (this.mutationEnabled) {
+      if (this.mutationEnabled || window.VisualizerRegistry?.globalMutationEnabled) {
         this.mutationTimer++;
         if (this.mutationTimer >= this.mutationInterval) {
           this.mutateSettings();
@@ -610,7 +611,7 @@ class KaleidoscopeVisualizer {
   }
   
   resetVisualizerSettings() {
-    window.VisualizerRegistry.resetToDefaults(this);
+    setTimeout(() => window.VisualizerRegistry.resetToDefaults(this), 10);
   }
   
   toggleSettings() {
@@ -737,7 +738,7 @@ class KaleidoscopeVisualizer {
   
   static getSettingsSchema() {
     return {
-      name: 'Kaleidoscope Visualizer',
+      name: 'Kaleidoscope',
       settings: {
         segments: {
           type: 'range',

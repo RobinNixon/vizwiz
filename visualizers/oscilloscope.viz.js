@@ -37,15 +37,16 @@ class OscilloscopeVisualizer {
   }
 
   init(elements) {
-  this.elements = elements;
-  this.buildVisualizerSettings();
+    this.elements = elements;
+    this.buildVisualizerSettings();
 
-  const resetBtn = document.getElementById("resetSettings");
-  if (resetBtn) {
-    resetBtn.addEventListener("click", () => {
+    const resetBtn = document.getElementById("resetSettings");
+    if (resetBtn) {
+      resetBtn.addEventListener("click", () => {
+        this.resetVisualizerSettings();
+      });
+    }
     this.resetVisualizerSettings();
-    });
-  }
   }
 
   startVisualization(analyser, dataArray, ctx, canvas) {
@@ -75,7 +76,7 @@ class OscilloscopeVisualizer {
   if (this.analyser && this.dataArray) {
     this.analyser.getByteTimeDomainData(this.dataArray);
 
-    if (this.mutationEnabled) {
+    if (this.mutationEnabled || window.VisualizerRegistry?.globalMutationEnabled) {
     this.mutationTimer++;
     if (this.mutationTimer >= this.mutationInterval) {
       this.mutateSettings();
@@ -363,12 +364,12 @@ class OscilloscopeVisualizer {
   }
 
   resetVisualizerSettings() {
-  window.VisualizerRegistry.resetToDefaults(this);
+    setTimeout(() => window.VisualizerRegistry.resetToDefaults(this), 10);
   }
 
   static getSettingsSchema() {
   return {
-    name: "Oscilloscope Visualizer",
+    name: "Oscilloscope",
     settings: {
     lineWidth: {
       type: "range",

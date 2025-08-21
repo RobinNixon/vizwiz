@@ -32,6 +32,8 @@ class viznameVisualizer
 
   init(elements) {
     // Initialize elements
+    // Call the following once initialised to ensure settings display correctly
+    this.resetVisualizerSettings();
   }
 
   static getSettingsSchema() {
@@ -48,6 +50,9 @@ class viznameVisualizer
 
   animate() {
     // Animation loop
+    // When supporting mutation, check also for the global flag
+    //   window.VisualizerRegistry?.globalMutationEnabled
+    // Which is a mutation override forcing all visualizers to mutate
   }
 
   render(ctx, dataArray, width, height) {
@@ -91,9 +96,9 @@ class viznameVisualizer
   }
 
   resetVisualizerSettings() {
-    // Reset settings
+    // Reset settings after giving time for DOM catchup
     // Keep this function as is — it should not require changing
-    window.VisualizerRegistry.resetToDefaults(this);
+    setTimeout(() => window.VisualizerRegistry.resetToDefaults(this), 10);
   }
   
   toggleSettings() {
@@ -195,6 +200,7 @@ class BarsVisualizer {
         this.resetVisualizerSettings();
       });
     }
+    this.resetVisualizerSettings();
   }
   
   startVisualization(analyser, dataArray, ctx, canvas) {
@@ -421,9 +427,9 @@ class BarsVisualizer {
   }
   
   resetVisualizerSettings() {
-    // Reset settings
+    // Reset settings after giving the DOM time
     // Keep this function as is — it should not require changing
-    window.VisualizerRegistry.resetToDefaults(this);
+    setTimeout(() => window.VisualizerRegistry.resetToDefaults(this), 10);
   }
   
   toggleSettings() {

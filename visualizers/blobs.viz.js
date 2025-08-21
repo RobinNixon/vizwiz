@@ -64,6 +64,7 @@ class BlobVisualizer {
         this.resetVisualizerSettings();
       });
     }
+    this.resetVisualizerSettings();
   }
   
   startVisualization(analyser, dataArray, ctx, canvas) {
@@ -98,7 +99,7 @@ class BlobVisualizer {
       this.analyser.getByteFrequencyData(this.dataArray);
       
       // Handle mutations
-      if (this.mutationEnabled) {
+      if (this.mutationEnabled || window.VisualizerRegistry?.globalMutationEnabled) {
         this.mutationTimer++;
         if (this.mutationTimer >= this.mutationInterval) {
           this.mutateSettings();
@@ -452,7 +453,7 @@ class BlobVisualizer {
   }
   
   resetVisualizerSettings() {
-    window.VisualizerRegistry.resetToDefaults(this);
+    setTimeout(() => window.VisualizerRegistry.resetToDefaults(this), 10);
   }
   
   toggleSettings() {
@@ -473,7 +474,7 @@ class BlobVisualizer {
   
   static getSettingsSchema() {
     return {
-      name: 'Floating Blobs',
+      name: 'Blobby Blobs',
       settings: {
         maxBlobs: {
           type: 'range',

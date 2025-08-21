@@ -54,6 +54,7 @@ class GrooveVisualizer {
         this.resetVisualizerSettings();
       });
     }
+    this.resetVisualizerSettings();
   }
 
   startVisualization(analyser, dataArray, ctx, canvas) {
@@ -82,7 +83,7 @@ class GrooveVisualizer {
       this.analyser.getByteFrequencyData(this.dataArray);
 
       // Mutation system
-      if (this.mutationEnabled) {
+      if (this.mutationEnabled || window.VisualizerRegistry?.globalMutationEnabled) {
         this.mutationTimer++;
         if (this.mutationTimer >= this.mutationInterval) {
           this.mutateSettings();
@@ -327,7 +328,7 @@ class GrooveVisualizer {
 
   static getSettingsSchema() {
     return {
-      name: 'Groove Visualizer',
+      name: 'Groovy Groove',
       settings: {
         particleCount: {
           type: 'range',
@@ -477,7 +478,7 @@ class GrooveVisualizer {
   }
 
   resetVisualizerSettings() {
-    window.VisualizerRegistry.resetToDefaults(this);
+    setTimeout(() => window.VisualizerRegistry.resetToDefaults(this), 10);
   }
 
   toggleSettings() {

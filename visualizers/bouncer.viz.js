@@ -67,6 +67,7 @@ class BigBouncerVisualizer {
         this.resetVisualizerSettings();
       });
     }
+    this.resetVisualizerSettings();
   }
 
   startVisualization(analyser, dataArray, ctx, canvas) {
@@ -98,7 +99,7 @@ class BigBouncerVisualizer {
     if (this.analyser && this.dataArray) {
       this.analyser.getByteFrequencyData(this.dataArray);
 
-      if (this.mutationEnabled) {
+      if (this.mutationEnabled || window.VisualizerRegistry?.globalMutationEnabled) {
         this.mutationTimer++;
         if (this.mutationTimer >= this.mutationInterval) {
           this.mutateSettings();
@@ -279,7 +280,7 @@ class BigBouncerVisualizer {
   }
 
   resetVisualizerSettings() {
-    window.VisualizerRegistry.resetToDefaults(this);
+    setTimeout(() => window.VisualizerRegistry.resetToDefaults(this), 10);
   }
 
   toggleSettings() {
