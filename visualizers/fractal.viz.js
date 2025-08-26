@@ -18,9 +18,9 @@ class FractalVisualizer {
     this.colorScheme = 'forest';
     this.lineWidth = 2.0;
     this.spawnRate = 0.5;
-    this.audioSensitivity = 1.0;
+    this.audioSensitivity = 3.0;
     this.trailLength = 0.85;
-    this.pulseSensitivity = 1.0;
+    this.pulseSensitivity = 3.0;
 
     // --- Core animation properties (required by VizWiz) ---
     this.animationId = null;
@@ -279,7 +279,7 @@ class FractalVisualizer {
 
   resetVisualizerSettings() {
     setTimeout(() => window.VisualizerRegistry.resetToDefaults(this), 10);
-    //this.fractals = []; // Also clear fractals on reset
+    this.fractals = []; // Also clear fractals on reset
   }
 
   // Visual feedback for mutated controls
@@ -434,12 +434,12 @@ class FractalVisualizer {
         audioSensitivity: {
           type: 'range',
           label: 'Audio Response',
-          min: 0.1, max: 3.0, default: 1.0, step: 0.1, unit: 'x'
+          min: 0.1, max: 3.0, default: 3.0, step: 0.1, unit: 'x'
         },
         pulseSensitivity: {
             type: 'range',
             label: 'Pulse Sensitivity',
-            min: 0.0, max: 3.0, default: 1.0, step: 0.1, unit: 'x'
+            min: 0.0, max: 3.0, default: 3.0, step: 0.1, unit: 'x'
         },
         spawnRate: {
           type: 'range',
@@ -467,8 +467,7 @@ class FractalVisualizer {
       colorScheme: { probability: 0.8, values: ['forest', 'aurora', 'fire', 'ice', 'cosmic', 'electric'] },
       recursionDepth: { probability: 0.4, range: { min: 3, max: 7 }, step: 1 },
       branchAngle: { probability: 0.6, range: { min: 0.2, max: 1.2 }, step: 0.05 },
-      lineWidth: { probability: 0.5, range: { min: 1.0, max: 4.0 }, step: 0.1 },
-      pulseSensitivity: { probability: 0.4, range: { min: 0.5, max: 2.5 }, step: 0.1 }
+      lineWidth: { probability: 0.5, range: { min: 1.0, max: 4.0 }, step: 0.1 }
     };
   }
 }

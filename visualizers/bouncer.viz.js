@@ -17,7 +17,7 @@ class BigBouncerVisualizer {
     this.trailLength = 10;
     this.glowIntensity = 10;
     this.haloSize = 1;
-    this.sensitivity = 1.0;
+    this.sensitivity = 3.0;
     this.backgroundStyle = 'dark';
     this.bounceEffect = true;
     this.rotationEnabled = true;
@@ -353,7 +353,7 @@ class BigBouncerVisualizer {
           label: 'Sensitivity',
           min: 50,
           max: 300,
-          default: 100,
+          default: 300,
           step: 10,
           unit: '%'
         },
@@ -469,10 +469,6 @@ class BigBouncerVisualizer {
       haloSize: {
         probability: 0.25,
         range: { min: 0, max: 20 }
-      },
-      sensitivity: {
-        probability: 0.3,
-        range: { min: 50, max: 300 }
       },
       enableCircles: {
         probability: 0.15,

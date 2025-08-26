@@ -22,8 +22,10 @@ class VizWiz {
     // Random visualizer switching
     this.randomMode = false;
     this.randomTimer = 0;
-    this.randomInterval = 1200; // Switch every 20 seconds (1200 frames at 60fps)
     this.forceMutateMode = false;
+    this.randomMode = false;
+    this.lastRandomSwitch = 0; // Store timestamp of last switch
+    this.nextRandomInterval = this.getRandomInterval(); // Get initial interval
   }
   
   init() {
@@ -46,7 +48,11 @@ class VizWiz {
     };
     loop();
   }
-  
+  getRandomInterval() {
+    // Generate random interval between 5 and 25 seconds (in milliseconds)
+    return 5000 + Math.random() * 20000;
+  }
+
   setupElements() {
     this.elements = {
       fileBtn: document.getElementById('fileBtn'),
@@ -121,12 +127,9 @@ class VizWiz {
       this.switchVisualizer(e.target.value);
     });
     
-    // Random mode checkbox (now in HTML)
     this.elements.randomCheckbox.addEventListener('change', (e) => {
       this.randomMode = e.target.checked;
       this.randomTimer = 0; // Reset timer
-      
-      // Auto-enable force mutate when random is on for maximum variety
       this.forceMutateMode = this.randomMode;
       
       // Set global mutation flag
@@ -144,7 +147,6 @@ class VizWiz {
       }
       
       // console.log('Random visualizer mode:', this.randomMode ? 'ON' : 'OFF');
-      // console.log('Auto force mutate mode:', this.forceMutateMode ? 'ON' : 'OFF');
     });
     
     this.elements.settingsBtn.addEventListener('click', () => {
@@ -179,10 +181,6 @@ class VizWiz {
       if (this.audioElement.src) {
         this.togglePlayback();
       }
-    });
-    
-    document.addEventListener('keydown', (e) => {
-      this.handleKeyPress(e);
     });
     
     window.addEventListener('resize', () => {
@@ -284,17 +282,29 @@ class VizWiz {
   updateRandomMode() {
     if (!this.randomMode || !this.isPlaying) return;
     
-    this.randomTimer++;
-    if (this.randomTimer >= this.randomInterval) {
-      this.randomInterval = 500 + Math.random() * 1000;
+    const currentTime = Date.now();
+      
+    // Initialize timestamp if this is the first call
+    if (this.lastRandomSwitch === 0) {
+      this.lastRandomSwitch = currentTime;
+      return;
+    }
+    
+    // Check if enough time has passed
+    if (currentTime - this.lastRandomSwitch >= this.nextRandomInterval) {
+      this.lastRandomSwitch = currentTime;
+      this.nextRandomInterval = this.getRandomInterval();
+      // console.log(`Next switch in ${this.nextRandomInterval / 1000}s`);
+ 
       const randomId = this.getRandomVisualizerId();
       if (randomId) {
         // console.log(`Random switch to: ${randomId}`);
         this.switchVisualizer(randomId);
+        setTimeout(() => window.VisualizerRegistry.resetToDefaults(this.visualizerInstances.get(randomId)), 10);
       }
-      this.randomTimer = 0;
     }
   }
+  
   saveCurrentVisualizerSettings() {
     if (!this.currentVisualizer) return;
     
@@ -625,39 +635,6 @@ class VizWiz {
     }
   }
   
-  handleKeyPress(e) {
-    if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') {
-      return;
-    }
-    
-    switch (e.key.toLowerCase()) {
-      case ' ':
-        e.preventDefault();
-        if (this.audioElement.src) {
-          this.togglePlayback();
-        }
-        break;
-      case 'f':
-        e.preventDefault();
-        if (this.audioElement.src) {
-          this.toggleFullscreen();
-        }
-        break;
-      case 'r':
-        e.preventDefault();
-        if (this.audioElement.src) {
-          this.toggleRepeatMode();
-        }
-        break;
-      case 's':
-        e.preventDefault();
-        if (!this.isFullscreen && this.currentVisualizer && this.currentVisualizer.toggleSettings) {
-          this.currentVisualizer.toggleSettings();
-        }
-        break;
-    }
-  }
-  
   resizeCanvas() {
     const container = this.canvas.parentElement;
     const rect = container.getBoundingClientRect();
@@ -733,8 +710,7 @@ window.VisualizerRegistry = {
   cleanValue(value, step) {
     if (!step || step >= 1) return Math.round(value);
     
-    const decimals = Math.max(0, -Math.floor(Math.log10(step)));
-    return parseFloat(value.toFixed(decimals));
+    return value.toFixed(1) * 1;
   },
   
   /**

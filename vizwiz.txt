@@ -73,6 +73,8 @@ class viznameVisualizer
 
   static getMutationSettings() {
     // Return mutatable settings object
+    // You should not allow any sensitivity to be mutated
+    // as your visualizer may appear to stop working
   }
 
   highlightMutatedControl(element, key) {
@@ -581,6 +583,8 @@ class BarsVisualizer {
   
   static getMutationSettings() {
     // Return mutatable settings object
+    // Don't allow sensitivity to be mutated
+
     return {
       colorScheme: {
         probability: 0.6,

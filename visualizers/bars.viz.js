@@ -453,6 +453,7 @@ class BarsVisualizer {
   
   static getMutationSettings() {
     // Return mutatable settings object
+    // Don't allow sensitivity to be mutated
     return {
       colorScheme: {
         probability: 0.6,

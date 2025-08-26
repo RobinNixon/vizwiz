@@ -1,6 +1,6 @@
 class PlasmaVisualizer {
   constructor() {
-    this.resolution = 2;
+    this.resolution = 5;
     this.speed = 1.0;
     this.turbulence = 1.0;
     this.trailLength = 0.85;
@@ -749,11 +749,6 @@ class PlasmaVisualizer {
         probability: 0.2,
         range: { min: 0.6, max: 0.95 },
         step: 0.05
-      },
-      audioSensitivity: {
-        probability: 0.3,
-        range: { min: 0.8, max: 2.0 },
-        step: 0.1
       },
       backgroundStyle: {
         probability: 0.4,

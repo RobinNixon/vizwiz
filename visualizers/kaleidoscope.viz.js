@@ -929,11 +929,6 @@ class KaleidoscopeVisualizer {
       reflectionStyle: {
         probability: 0.15,
         values: ['mirror', 'normal']
-      },
-      pulseSensitivity: {
-        probability: 0.4,
-        range: { min: 0.5, max: 2.5 },
-        step: 0.1
       }
     };
   }

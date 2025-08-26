@@ -10,7 +10,7 @@ class GrooveVisualizer {
     this.colorScheme = 'rainbow';
     this.shapeSize = 120;
     this.glowEnabled = true;
-    this.responsiveness = 1.2;
+    this.responsiveness = 2.0;
     this.swirlDepth = 1.0;
 
     // Color schemes
@@ -389,7 +389,7 @@ class GrooveVisualizer {
           label: 'Responsiveness',
           min: 50,
           max: 300,
-          default: 120,
+          default: 200,
           step: 10,
           unit: '%'
         },
@@ -443,10 +443,6 @@ class GrooveVisualizer {
       particleCount: {
         probability: 0.3,
         values: [4, 6, 8, 10, 12]
-      },
-      pulseIntensity: {
-        probability: 0.25,
-        range: { min: 0.8, max: 2.5 }
       },
       rotationSpeed: {
         probability: 0.2,
