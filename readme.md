@@ -20,7 +20,7 @@ Transform your music into stunning visual experiences! VizWiz is a lightweight, 
 1. **Clone or Download**
    ```bash
    git clone https://github.com/yourusername/vizwiz.git
-   cd vizwiz-main
+   cd vizwiz-main # Or wherever you save the app
    ```
 
 2. **Open in Browser**
