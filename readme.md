@@ -25,7 +25,7 @@ Transform your music into stunning visual experiences! VizWiz is a lightweight, 
 
 2. **Open in Browser**
    ```bash
-   # Simply open vizwiz.html in any modern browser
+   # Simply open index.html in any modern browser
    open index.html
    ```
 
@@ -37,7 +37,7 @@ Transform your music into stunning visual experiences! VizWiz is a lightweight, 
 
 ### Adding New Visualizers
 
-Provide a copy of `vizwiz.txt` to an AI, along with a description of the effects and features you want your visualiser to have, including any user settings you would like to be made available. Or, write your own using the same information. Once complete save the new file in the *vizwiz* folder and add a link at the bottom of the `index.html` file (where commented) like this:
+Provide a copy of `vizwiz.txt` to an AI, along with a description of the effects and features you want your visualizer to have, including any user settings you would like to be made available. Or, write your own using the same information. Once complete save the new file in the *vizwiz* folder and add a link at the bottom of the `index.html` file (where commented) like this:
 
 ```
 <script src='visualizers/newviz.viz.js'></script>
@@ -54,7 +54,7 @@ vizwiz/
 ├── vizwiz.txt                # Visualizer development guide
 ├── readme.md                 # This readme file
 ├── vizwiz.png                # Favicon
-└── Visualizers/
+└── visualizers/
     ├── bars.viz.js           # Bars and Bars    (Claude Sonnet 4)
     ├── blobs.viz.js          # Blobby Blobs     (Deepseek R1)
     ├── bouncer.viz.js        # Big Bouncer      (Grok 4)
