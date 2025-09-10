@@ -52,13 +52,6 @@ window.VisualizerManifest = [
     description: 'Classic waveform display with multiple channels'
   },
   {
-    id: 'particles',
-    name: 'Particle Storm',
-    file: 'particles.viz.js',
-    author: 'Claude Sonnet 3.5',
-    description: 'Advanced particle system with physics and connections'
-  },
-  {
     id: 'plasma',
     name: 'Plasma Flow',
     file: 'plasma.viz.js',

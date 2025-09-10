@@ -12,7 +12,7 @@ Transform any audio into stunning visual experiences! VizWiz is a powerful, enti
 - **Drag & Drop** - Easy file loading with visual feedback
 
 ### 🎨 Visualization
-- **9 Unique Visualizers** - Bars, particles, blobs, fractals, plasma, and more
+- **Several Unique Visualizers** - Bars, particles, blobs, fractals, plasma, and more
 - **Real-time Response** - Frequency-based visual effects that react to bass, mids, and treble
 - **Particle Storm** - Advanced particle system with physics and connections
 - **Dynamic Backgrounds** - Multiple background styles and effects
@@ -173,7 +173,6 @@ vizwiz/
     ├── groove.viz.js         # Groovy Groove    (Qwen3-235B-A22B-2507)
     ├── kaleidoscope.viz.js   # Kaleidoscope     (Claude Sonnet 4)
     ├── oscilloscope.viz.js   # Oscilloscope     (ChatGPT 5 Fast)
-    ├── particles.viz.js      # Particle Storm   (Claude Sonnet 4)
     └── plasma.viz.js         # Plasma Flow      (Claude Sonnet 4)
 ```
 
