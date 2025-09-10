@@ -83,20 +83,28 @@ Transform any audio into stunning visual experiences! VizWiz is a powerful, enti
 
 ## 🛠️ Development
 
-### Adding New Visualizers
+## 🎨 Make Your Own Visualizers
 
-VizWiz now supports **dynamic visualizer loading** - no need to manually edit HTML files!
+One of the best things about VizWiz is how easy it is to add new effects.  
+You don’t need to be a coder — you can create visualizers by **chatting with an AI**.
+
+1. Copy and paste or drag and drop the `vizwiz.txt` file (included in this project) into a chat with your favorite AI assistant.  
+2. Describe in as much detail as you can what kind of visualizer you’d like (spirals, flames, galaxies, anything you can imagine).
+3. The AI will give you back a `.viz.js` file (or if you are a coder write your own).
+4. Save that file into the `visualizers/` folder.  
+5. Add its details into `registry.js` using one of the methods below.  
+6. Refresh VizWiz and your new visualizer will be loaded.
+
+## ⚙️ Adding a visualizer to the VizWiz registry
 
 #### Method 1: Using the Helper Tool (Easiest)
 1. Open `visualizer-helper.html` in your browser
 2. Fill in your visualizer details (name, author, description)
 3. Copy the generated code
-4. Paste it into `visualizers/registry.js`
-5. Create your visualizer file and refresh!
+4. Paste it into `visualizers/registry.js` file
 
-#### Method 2: Manual Registry Edit
-1. Create your visualizer file: `visualizers/yourname.viz.js`
-2. Edit `visualizers/registry.js` and add your visualizer to the array:
+#### Method 2: Manual Registry Edit (if you know what you are doing)
+1. Edit `visualizers/registry.js` and add your visualizer to the array:
    ```javascript
    // Add this entry to the VisualizerManifest array
    {
@@ -107,7 +115,7 @@ VizWiz now supports **dynamic visualizer loading** - no need to manually edit HT
      description: 'What your visualizer does'
    }
    ```
-3. Refresh your browser - the visualizer appears automatically!
+2. Refresh your browser - the visualizer appears automatically!
 
 #### Method 3: Using Node.js Utility (For Developers)
 If you have Node.js installed, you can use the automated utility:
@@ -132,7 +140,7 @@ Let's say you want to add a "Spiral Galaxy" visualizer:
    ```
 4. **Save and refresh**: Your new visualizer will appear in the dropdown!
 
-#### Creating the Visualizer
+## Creating a Visualizer in More Detail
 Provide a copy of `vizwiz.txt` to an AI, along with a description of the effects and features you want your visualizer to have, including any user settings you would like to be made available. Or, write your own using the same information.
 
 For the best results ask your AI to use different colours from the example provided, and to be creative with your idea. Report any errors back to your AI for correcting - if necessary offer other visualizer examples from this distribution as further guidance.
