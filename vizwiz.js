@@ -147,7 +147,7 @@ class VizWiz {
     this.audioElement.addEventListener('timeupdate', this.boundAudioListeners.timeupdate);
     this.audioElement.addEventListener('ended', this.boundAudioListeners.ended);
     
-    console.log('Audio element listeners set up');
+    // console.log('Audio element listeners set up');
   }
   
   setupEventListeners() {
@@ -158,7 +158,7 @@ class VizWiz {
     this.elements.fileInput.addEventListener('change', async (e) => {
       try {
         const files = e.target.files;
-        console.log(`Selected ${files.length} files via file picker`);
+        // console.log(`Selected ${files.length} files via file picker`);
         
         if (files.length === 0) return;
         
@@ -174,7 +174,7 @@ class VizWiz {
         
         // Filter for audio files
         const audioFiles = Array.from(files).filter(file => file.type.startsWith('audio/'));
-        console.log(`Found ${audioFiles.length} audio files out of ${files.length} total`);
+        // console.log(`Found ${audioFiles.length} audio files out of ${files.length} total`);
         
         if (audioFiles.length === 0) {
           this.showFileError(
@@ -186,7 +186,7 @@ class VizWiz {
         
         // Show progress for large selections
         if (audioFiles.length > 100) {
-          console.log(`Processing ${audioFiles.length} audio files...`);
+          // console.log(`Processing ${audioFiles.length} audio files...`);
         }
         
         await this.handleNewFiles(audioFiles);
@@ -303,14 +303,14 @@ class VizWiz {
         const value = parseInt(e.target.value);
         this.crossfadeDuration = value * 1000;
         crossfadeDurationSpan.textContent = value;
-        console.log(`Crossfade duration set to: ${value}s ${value === 0 ? '(instant switching)' : ''}`);
+        // console.log(`Crossfade duration set to: ${value}s ${value === 0 ? '(instant switching)' : ''}`);
       });
     }
     
     if (shuffleBtn) {
       shuffleBtn.addEventListener('click', () => {
         this.shufflePlaylist();
-        console.log('Playlist shuffled');
+        // console.log('Playlist shuffled');
       });
     }
     
@@ -354,7 +354,7 @@ class VizWiz {
       
       try {
         const files = e.dataTransfer.files;
-        console.log(`Dropped ${files.length} files`);
+        // console.log(`Dropped ${files.length} files`);
         
         if (files.length === 0) {
           this.showFileError('No files detected in drop. Please try again.');
@@ -374,7 +374,7 @@ class VizWiz {
         
         // Filter for audio files
         const audioFiles = Array.from(files).filter(file => file.type.startsWith('audio/'));
-        console.log(`Found ${audioFiles.length} audio files out of ${files.length} total`);
+        // console.log(`Found ${audioFiles.length} audio files out of ${files.length} total`);
         
         if (audioFiles.length === 0) {
           this.showFileError(
@@ -386,7 +386,7 @@ class VizWiz {
         
         // Show progress for large drops
         if (audioFiles.length > 50) {
-          console.log(`Processing ${audioFiles.length} audio files...`);
+          // console.log(`Processing ${audioFiles.length} audio files...`);
         }
         
         await this.handleNewFiles(audioFiles);
@@ -411,7 +411,7 @@ class VizWiz {
       
       registeredVisualizers.forEach(({ id, name, class: VisualizerClass }) => {
         this.visualizers.set(id, VisualizerClass);
-      // console.log(`Registered ${id} visualizer: ${name}`);
+        // console.log(`Registered ${id} visualizer: ${name}`);
       });
       
       // Populate the dropdown
@@ -436,7 +436,7 @@ class VizWiz {
       
       // Method 2: Try auto-loader as fallback
       if (window.VisualizerAutoLoader) {
-        console.log('Manifest not found, trying auto-loader...');
+        // console.log('Manifest not found, trying auto-loader...');
         await window.VisualizerAutoLoader.loadAvailableVisualizers();
         return;
       }
@@ -451,7 +451,7 @@ class VizWiz {
   
   async loadFromManifest() {
     const manifest = window.VisualizerManifest;
-    console.log(`Loading ${manifest.length} visualizers from manifest...`);
+    // console.log(`Loading ${manifest.length} visualizers from manifest...`);
     
     // Load each visualizer script dynamically
     const loadPromises = manifest.map(visualizer => {
@@ -459,7 +459,7 @@ class VizWiz {
         const script = document.createElement('script');
         script.src = `visualizers/${visualizer.file}`;
         script.onload = () => {
-          console.log(`✓ Loaded ${visualizer.name} by ${visualizer.author}`);
+          // console.log(`✓ Loaded ${visualizer.name} by ${visualizer.author}`);
           resolve(visualizer);
         };
         script.onerror = () => {
@@ -475,11 +475,14 @@ class VizWiz {
     const successful = results.filter(r => r.status === 'fulfilled').length;
     const failed = results.filter(r => r.status === 'rejected').length;
     
-    console.log(`Visualizer loading complete: ${successful} successful, ${failed} failed`);
+    // console.log(`Visualizer loading complete: ${successful} successful, ${failed} failed`);
     
     if (failed > 0) {
       console.warn(`Some visualizers failed to load. Check that all files exist in the visualizers/ directory.`);
     }
+    
+    // Give visualizers a moment to register themselves
+    await new Promise(resolve => setTimeout(resolve, 100));
   }
   
   populateVisualizerDropdown(visualizers) {
@@ -805,7 +808,7 @@ class VizWiz {
     try {
       // CRITICAL: Only create source if we don't have one already
       if (!this.audioSource) {
-        console.log('Creating new MediaElementSource');
+        // console.log('Creating new MediaElementSource');
         this.audioSource = this.audioContext.createMediaElementSource(this.audioElement);
         this.audioSource.connect(this.analyser);
         this.analyser.connect(this.audioContext.destination);
@@ -825,7 +828,7 @@ class VizWiz {
       }
       
       this.elements.duration.textContent = this.formatTime(this.audioElement.duration);
-      console.log('Audio loaded and connected to analyser');
+      // console.log('Audio loaded and connected to analyser');
       
     } catch (error) {
       console.error('Error in onAudioLoaded:', error);
@@ -898,7 +901,7 @@ class VizWiz {
     // Add to DOM (hidden)
     document.body.appendChild(this.audioElement);
     
-    console.log('Created new audio element');
+    // console.log('Created new audio element');
   }
  
   async togglePlayback() {
@@ -998,7 +1001,7 @@ class VizWiz {
     
     // Start crossfade when we're near the end of the track
     if (timeRemaining <= crossfadeStartTime && timeRemaining > 0.1) {
-      console.log(`Starting crossfade with ${timeRemaining.toFixed(1)}s remaining`);
+      // console.log(`Starting crossfade with ${timeRemaining.toFixed(1)}s remaining`);
       this.crossfadeInProgress = true;
       
       // Calculate next track index
@@ -1018,7 +1021,7 @@ class VizWiz {
   onTrackEnded() {
     if (this.crossfadeInProgress) {
       // Crossfade is already in progress, let it complete naturally
-      console.log('Track ended during crossfade - letting crossfade complete');
+      // console.log('Track ended during crossfade - letting crossfade complete');
       return;
     } else if (this.playlist.length > 1) {
       // Multiple tracks - advance to next (handles repeat modes in nextTrack)
@@ -1077,7 +1080,7 @@ class VizWiz {
           break;
       }
     }
-    console.log('Repeat mode:', this.repeatMode);
+    // console.log('Repeat mode:', this.repeatMode);
   }
   
   toggleFullscreen() {
@@ -1241,7 +1244,7 @@ class VizWiz {
       this.trackTitleTimer = null;
     }, this.trackTitleDisplayDuration);
     
-    console.log(`Showing track title for ${this.trackTitleDisplayDuration / 1000} seconds`);
+    // console.log(`Showing track title for ${this.trackTitleDisplayDuration / 1000} seconds`);
   }
   
   // Playlist Management Methods
@@ -1272,9 +1275,7 @@ class VizWiz {
       this.playlist.push(track);
     });
     
-    console.log(`Loaded playlist with ${this.playlist.length} tracks`);
-    
-
+    // console.log(`Loaded playlist with ${this.playlist.length} tracks`);
     
     // Load first track (only if replacing or if no track was playing)
     if (this.playlist.length > 0) {
@@ -1339,7 +1340,7 @@ class VizWiz {
       this.playlist.push(track);
     });
     
-    console.log(`Added ${files.length} track(s) to playlist. Total: ${this.playlist.length} tracks`);
+    // console.log(`Added ${files.length} track(s) to playlist. Total: ${this.playlist.length} tracks`);
     
     // Update UI
     this.updatePlaylistUI();
@@ -1368,7 +1369,7 @@ class VizWiz {
       this.playlist.push(track);
     });
     
-    console.log(`Created new playlist with ${files.length} tracks`);
+    // console.log(`Created new playlist with ${files.length} tracks`);
     
     // Load first track and show playlist
     if (this.playlist.length > 0) {
@@ -1395,11 +1396,9 @@ class VizWiz {
     this.currentTrackIndex = shuffled.findIndex(track => track === currentTrack);
     this.playlist = shuffled;
     
-    console.log(`Shuffled playlist, current track now at index ${this.currentTrackIndex}`);
+    // console.log(`Shuffled playlist, current track now at index ${this.currentTrackIndex}`);
     this.updatePlaylistUI();
   }
-  
-
   
   loadTrackFromPlaylist(index, autoPlay = false) {
     if (index < 0 || index >= this.playlist.length) return;
@@ -1525,7 +1524,7 @@ class VizWiz {
   crossfadeToTrack(newIndex) {
     if (newIndex < 0 || newIndex >= this.playlist.length) return;
     
-    console.log(`Crossfading to track ${newIndex}`);
+    // console.log(`Crossfading to track ${newIndex}`);
     
     // Create next audio element
     this.nextAudioElement = new Audio();
@@ -1542,7 +1541,7 @@ class VizWiz {
   
   async performCrossfade(newIndex) {
     try {
-      console.log(`Starting crossfade to track ${newIndex}`);
+      // console.log(`Starting crossfade to track ${newIndex}`);
       
       // Create gain nodes for crossfading
       this.crossfadeGain = this.audioContext.createGain();
@@ -1559,15 +1558,15 @@ class VizWiz {
       this.nextGain.connect(this.analyser);
       
       // Start next track
-      console.log('Starting next audio element');
+      // console.log('Starting next audio element');
       await this.nextAudioElement.play();
-      console.log(`Next track playing: ${this.nextAudioElement.currentTime}/${this.nextAudioElement.duration}`);
+      // console.log(`Next track playing: ${this.nextAudioElement.currentTime}/${this.nextAudioElement.duration}`);
       
       // Perform crossfade
       const fadeTime = this.crossfadeDuration / 1000;
       const now = this.audioContext.currentTime;
       
-      console.log(`Crossfading over ${fadeTime} seconds`);
+      // console.log(`Crossfading over ${fadeTime} seconds`);
       
       // Fade out current track
       this.crossfadeGain.gain.setValueAtTime(1, now);
@@ -1583,7 +1582,7 @@ class VizWiz {
       }, this.crossfadeDuration);
       
     } catch (error) {
-      console.error('Crossfade error:', error);
+      // console.error('Crossfade error:', error);
       // Fallback to regular track switch
       this.loadTrackFromPlaylist(newIndex, true);
     }
@@ -1642,13 +1641,13 @@ class VizWiz {
     this.nextGain = null;
     this.crossfadeInProgress = false;
     
-    console.log(`Crossfade completed to track ${newIndex}, duration: ${this.formatTime(this.audioElement.duration)}`);
+    // console.log(`Crossfade completed to track ${newIndex}, duration: ${this.formatTime(this.audioElement.duration)}`);
   }
   
   stopCrossfade() {
     if (!this.crossfadeInProgress) return;
     
-    console.log('Stopping crossfade in progress');
+    // console.log('Stopping crossfade in progress');
     
     // Clean up crossfade nodes
     if (this.crossfadeGain) {
@@ -1882,9 +1881,9 @@ class VizWiz {
         this.stopSystemAudioCapture();
       });
       
-      console.log('System audio capture started successfully');
-      console.log('Audio tracks:', this.mediaStream.getAudioTracks().length);
-      console.log('Video tracks:', this.mediaStream.getVideoTracks().length);
+      // console.log('System audio capture started successfully');
+      // console.log('Audio tracks:', this.mediaStream.getAudioTracks().length);
+      // console.log('Video tracks:', this.mediaStream.getVideoTracks().length);
       
     } catch (error) {
       console.error('Failed to start system audio capture:', error);
@@ -1947,7 +1946,7 @@ class VizWiz {
     this.elements.repeatBtn.disabled = true;
     this.elements.progressBar.disabled = true;
     
-    console.log('System audio capture stopped');
+    // console.log('System audio capture stopped');
   }
 }
 
