@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VizWiz Visualizer Helper</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: white;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 30px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        h1 {
+            color: #6366f1;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #e5e7eb;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 14px;
+        }
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+        button {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            width: 100%;
+            margin-top: 10px;
+        }
+        button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+        .output {
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 6px;
+            padding: 20px;
+            margin-top: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .instructions {
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            border-radius: 6px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+        .instructions h3 {
+            margin-top: 0;
+            color: #22c55e;
+        }
+        .copy-btn {
+            background: #059669;
+            padding: 8px 16px;
+            font-size: 14px;
+            margin-top: 10px;
+            width: auto;
+        }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎵 VizWiz Visualizer Helper</h1>
+        <p>This tool helps you generate the registry entry for your new visualizer. No Node.js required!</p>
+        
+        <form id="visualizerForm">
+            <div class="form-group">
+                <label for="filename">Filename (must end with .viz.js):</label>
+                <input type="text" id="filename" placeholder="e.g., spiral.viz.js" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="name">Display Name:</label>
+                <input type="text" id="name" placeholder="e.g., Spiral Galaxy" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="author">Author Name:</label>
+                <input type="text" id="author" placeholder="Your name" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="description">Description:</label>
+                <textarea id="description" rows="3" placeholder="Describe what your visualizer does..."></textarea>
+            </div>
+            
+            <button type="submit">Generate Registry Entry</button>
+        </form>
+        
+        <div id="output" class="output hidden"></div>
+        
+        <div id="instructions" class="instructions hidden">
+            <h3>📋 Next Steps:</h3>
+            <ol>
+                <li>Copy the generated code above</li>
+                <li>Open <code>visualizers/registry.js</code> in any text editor</li>
+                <li>Find the <code>window.VisualizerManifest = [</code> array</li>
+                <li>Add a comma after the last entry (if needed)</li>
+                <li>Paste your new entry before the closing <code>]</code></li>
+                <li>Save the file and refresh your browser</li>
+            </ol>
+            <p><strong>Your new visualizer will appear in the dropdown automatically!</strong></p>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('visualizerForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const filename = document.getElementById('filename').value.trim();
+            const name = document.getElementById('name').value.trim();
+            const author = document.getElementById('author').value.trim();
+            const description = document.getElementById('description').value.trim();
+            
+            // Validate filename
+            if (!filename.endsWith('.viz.js')) {
+                alert('Filename must end with .viz.js');
+                return;
+            }
+            
+            // Generate ID from filename
+            const id = filename.replace('.viz.js', '');
+            
+            // Generate the registry entry
+            const entry = `  {
+    id: '${id}',
+    name: '${name}',
+    file: '${filename}',
+    author: '${author}',
+    description: '${description}'
+  }`;
+            
+            // Show output
+            const outputDiv = document.getElementById('output');
+            const instructionsDiv = document.getElementById('instructions');
+            
+            outputDiv.textContent = entry;
+            outputDiv.classList.remove('hidden');
+            instructionsDiv.classList.remove('hidden');
+            
+            // Add copy button
+            let copyBtn = document.getElementById('copyBtn');
+            if (!copyBtn) {
+                copyBtn = document.createElement('button');
+                copyBtn.id = 'copyBtn';
+                copyBtn.className = 'copy-btn';
+                copyBtn.textContent = 'Copy to Clipboard';
+                copyBtn.addEventListener('click', function() {
+                    navigator.clipboard.writeText(entry).then(function() {
+                        copyBtn.textContent = 'Copied!';
+                        setTimeout(() => {
+                            copyBtn.textContent = 'Copy to Clipboard';
+                        }, 2000);
+                    });
+                });
+                outputDiv.appendChild(copyBtn);
+            }
+        });
+        
+        // Auto-generate filename from name
+        document.getElementById('name').addEventListener('input', function(e) {
+            const name = e.target.value.trim();
+            const filenameInput = document.getElementById('filename');
+            
+            if (name && !filenameInput.value) {
+                const filename = name.toLowerCase()
+                    .replace(/[^a-z0-9\s]/g, '')
+                    .replace(/\s+/g, '-') + '.viz.js';
+                filenameInput.value = filename;
+            }
+        });
+    </script>
+</body>
+</html>

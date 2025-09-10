@@ -323,12 +323,21 @@ body {
 }
 
 @keyframes pulse {
-    0%, 100% { transform: scale(1); opacity: 0.7; }
-    50% { transform: scale(1.2); opacity: 1; }
+
+    0%,
+    100% {
+        transform: scale(1);
+        opacity: 0.7;
+    }
+
+    50% {
+        transform: scale(1.2);
+        opacity: 1;
+    }
 }
 
 /* Mutation Mode Active Indicator */
-#mutateMode:checked + .mutation-status::after {
+#mutateMode:checked+.mutation-status::after {
     content: " 🎲 ACTIVE";
     color: #6366f1;
     font-weight: bold;
@@ -338,13 +347,21 @@ body {
 }
 
 @keyframes blink {
-    0%, 50% { opacity: 1; }
-    51%, 100% { opacity: 0.3; }
+
+    0%,
+    50% {
+        opacity: 1;
+    }
+
+    51%,
+    100% {
+        opacity: 0.3;
+    }
 }
 
 .settings-footer {
-  margin: auto;
-  width: 50%;
+    margin: auto;
+    width: 50%;
 }
 
 .hidden {
@@ -354,4 +371,146 @@ body {
 .dragover {
     background: rgba(99, 102, 241, 0.1) !important;
     border: 2px dashed #6366f1 !important;
+}
+
+/* Help Panel Styles */
+#helpPanel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 350px;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.95);
+    backdrop-filter: blur(10px);
+    border-left: 1px solid rgba(255, 255, 255, 0.1);
+    z-index: 250;
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
+    overflow-y: auto;
+}
+
+#helpPanel:not(.hidden) {
+    transform: translateX(0);
+}
+
+.help-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.help-header h3 {
+    margin: 0;
+    font-size: 1.2em;
+    font-weight: 500;
+}
+
+.help-content {
+    padding: 20px;
+}
+
+.shortcut-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.shortcut-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.shortcut-item kbd {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-family: monospace;
+    font-size: 12px;
+    color: #6366f1;
+    font-weight: bold;
+    min-width: 40px;
+    text-align: center;
+}
+
+/* Settings Footer Styles */
+.settings-footer {
+    display: flex;
+    gap: 10px;
+    padding: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    margin-top: 20px;
+}
+
+.settings-footer .btn {
+    flex: 1;
+    font-size: 13px;
+    padding: 8px 12px;
+}
+
+/* Mutation Highlight Animation */
+.setting-item.mutated {
+    animation: mutationPulse 0.6s ease-in-out;
+}
+
+@keyframes mutationPulse {
+    0% {
+        background: rgba(99, 102, 241, 0.3);
+    }
+
+    50% {
+        background: rgba(99, 102, 241, 0.5);
+    }
+
+    100% {
+        background: rgba(99, 102, 241, 0.3);
+    }
+}
+
+/* Performance indicator (optional) */
+.performance-stats {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 11px;
+    z-index: 1000;
+    pointer-events: none;
+}
+
+/*
+ System Audio Capture Styles */
+#captureBtn.active {
+    background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+    border-color: #ff6b35;
+    animation: captureActive 2s ease-in-out infinite;
+}
+
+@keyframes captureActive {
+
+    0%,
+    100% {
+        box-shadow: 0 0 5px rgba(255, 107, 53, 0.5);
+    }
+
+    50% {
+        box-shadow: 0 0 15px rgba(255, 107, 53, 0.8);
+    }
+}
+
+/* Capture button hover state */
+#captureBtn:hover:not(:disabled) {
+    background: rgba(255, 107, 53, 0.2);
+    border-color: #ff6b35;
 }

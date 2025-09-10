@@ -6,6 +6,8 @@ class VizWiz {
     this.audioElement = null;
     this.audioSource = null;
     this.analyser = null;
+    this.mediaStream = null;
+    this.isCapturing = false;
     this.canvas = null;
     this.ctx = null;
     this.currentVisualizer = null;
@@ -28,12 +30,12 @@ class VizWiz {
     this.nextRandomInterval = this.getRandomInterval(); // Get initial interval
   }
   
-  init() {
+  async init() {
     this.setupElements();
     this.setupAudioContext();
     this.setupEventListeners();
     this.setupDragAndDrop();
-    this.registerVisualizers();
+    await this.registerVisualizers();
     this.startGlobalAnimationLoop();
     // console.log('VizWiz initialized successfully');
   }
@@ -57,6 +59,7 @@ class VizWiz {
     this.elements = {
       fileBtn: document.getElementById('fileBtn'),
       fileInput: document.getElementById('fileInput'),
+      captureBtn: document.getElementById('captureBtn'),
       playBtn: document.getElementById('playBtn'),
       playIcon: document.getElementById('playIcon'),
       repeatBtn: document.getElementById('repeatBtn'),
@@ -86,7 +89,8 @@ class VizWiz {
     try {
       this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
       this.analyser = this.audioContext.createAnalyser();
-      this.analyser.fftSize = 512;
+      this.analyser.fftSize = 1024; // Increased for better frequency resolution
+      this.analyser.smoothingTimeConstant = 0.8; // Add smoothing for more stable visuals
       this.bufferLength = this.analyser.frequencyBinCount;
       this.dataArray = new Uint8Array(this.bufferLength);
       // console.log('Audio context created successfully');
@@ -104,6 +108,10 @@ class VizWiz {
       if (e.target.files.length > 0) {
         this.loadAudioFile(e.target.files[0], true);
       }
+    });
+    
+    this.elements.captureBtn.addEventListener('click', () => {
+      this.toggleSystemAudioCapture();
     });
     
     this.elements.playBtn.addEventListener('click', () => {
@@ -161,6 +169,21 @@ class VizWiz {
       }
     });
     
+    // Help system event listeners
+    const helpBtn = document.getElementById('helpBtn');
+    const helpPanel = document.getElementById('helpPanel');
+    const closeHelpBtn = document.getElementById('closeHelpBtn');
+    
+    if (helpBtn && helpPanel && closeHelpBtn) {
+      helpBtn.addEventListener('click', () => {
+        helpPanel.classList.toggle('hidden');
+      });
+      
+      closeHelpBtn.addEventListener('click', () => {
+        helpPanel.classList.add('hidden');
+      });
+    }
+    
     this.elements.fullscreenBtn.addEventListener('click', () => {
       this.toggleFullscreen();
     });
@@ -185,6 +208,11 @@ class VizWiz {
     
     window.addEventListener('resize', () => {
       this.resizeCanvas();
+    });
+    
+    // Add keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      this.handleKeyboardShortcuts(e);
     });
   }
   
@@ -216,7 +244,10 @@ class VizWiz {
     });
   }
   
-  registerVisualizers() {
+  async registerVisualizers() {
+    // Load visualizers dynamically from manifest
+    await this.loadVisualizersFromManifest();
+    
     // Check for the global visualizer registry
     if (window.VisualizerRegistry) {
       const registeredVisualizers = window.VisualizerRegistry.getAll();
@@ -235,6 +266,62 @@ class VizWiz {
       }
     } else {
       console.warn('VisualizerRegistry not found. Make sure visualizer scripts are loaded.');
+    }
+  }
+  
+  async loadVisualizersFromManifest() {
+    try {
+      // Method 1: Try to load from manifest (preferred)
+      if (window.VisualizerManifest) {
+        await this.loadFromManifest();
+        return;
+      }
+      
+      // Method 2: Try auto-loader as fallback
+      if (window.VisualizerAutoLoader) {
+        console.log('Manifest not found, trying auto-loader...');
+        await window.VisualizerAutoLoader.loadAvailableVisualizers();
+        return;
+      }
+      
+      // Method 3: Fallback message
+      console.warn('No dynamic loading system found. Visualizers should be loaded via HTML script tags.');
+      
+    } catch (error) {
+      console.error('Error loading visualizers:', error);
+    }
+  }
+  
+  async loadFromManifest() {
+    const manifest = window.VisualizerManifest;
+    console.log(`Loading ${manifest.length} visualizers from manifest...`);
+    
+    // Load each visualizer script dynamically
+    const loadPromises = manifest.map(visualizer => {
+      return new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = `visualizers/${visualizer.file}`;
+        script.onload = () => {
+          console.log(`✓ Loaded ${visualizer.name} by ${visualizer.author}`);
+          resolve(visualizer);
+        };
+        script.onerror = () => {
+          console.error(`✗ Failed to load ${visualizer.name} (${visualizer.file})`);
+          reject(new Error(`Failed to load ${visualizer.file}`));
+        };
+        document.head.appendChild(script);
+      });
+    });
+    
+    // Wait for all visualizers to load
+    const results = await Promise.allSettled(loadPromises);
+    const successful = results.filter(r => r.status === 'fulfilled').length;
+    const failed = results.filter(r => r.status === 'rejected').length;
+    
+    console.log(`Visualizer loading complete: ${successful} successful, ${failed} failed`);
+    
+    if (failed > 0) {
+      console.warn(`Some visualizers failed to load. Check that all files exist in the visualizers/ directory.`);
     }
   }
   
@@ -555,28 +642,58 @@ class VizWiz {
  
   async togglePlayback() {
     try {
-      if (this.isPlaying) {
-        this.audioElement.pause();
-        this.isPlaying = false;
-        this.elements.playIcon.textContent = '▶️';
-        if (this.currentVisualizer && this.currentVisualizer.stopVisualization) {
-          this.currentVisualizer.stopVisualization();
+      if (this.isCapturing) {
+        // Handle system audio capture playback
+        if (this.isPlaying) {
+          this.isPlaying = false;
+          this.elements.playIcon.textContent = '▶️';
+          this.elements.trackInfo.classList.remove('playing');
+          if (this.currentVisualizer && this.currentVisualizer.stopVisualization) {
+            this.currentVisualizer.stopVisualization();
+          }
+        } else {
+          if (this.audioContext.state === 'suspended') {
+            await this.audioContext.resume();
+          }
+          
+          this.isPlaying = true;
+          this.elements.playIcon.textContent = '⏸️';
+          this.elements.trackInfo.classList.add('playing');
+          if (this.currentVisualizer && this.currentVisualizer.startVisualization) {
+            this.currentVisualizer.startVisualization(this.analyser, this.dataArray, this.ctx, this.canvas);
+          }
+          
+          // Reset random timer when starting playback
+          this.randomTimer = 0;
         }
       } else {
-        if (this.audioContext.state === 'suspended') {
-          await this.audioContext.resume();
+        // Handle regular file playback
+        if (this.isPlaying) {
+          this.audioElement.pause();
+          this.isPlaying = false;
+          this.elements.playIcon.textContent = '▶️';
+          if (this.currentVisualizer && this.currentVisualizer.stopVisualization) {
+            this.currentVisualizer.stopVisualization();
+          }
+        } else {
+          if (this.audioContext.state === 'suspended') {
+            await this.audioContext.resume();
+          }
+          
+          await this.audioElement.play();
+          this.isPlaying = true;
+          this.elements.playIcon.textContent = '⏸️';
+          this.elements.trackInfo.classList.add('playing');
+          if (this.currentVisualizer && this.currentVisualizer.startVisualization) {
+            this.currentVisualizer.startVisualization(this.analyser, this.dataArray, this.ctx, this.canvas);
+          }
+          
+          // Track performance for the new visualizer
+          this.lastRenderStart = performance.now();
+          
+          // Reset random timer when starting playback
+          this.randomTimer = 0;
         }
-        
-        await this.audioElement.play();
-        this.isPlaying = true;
-        this.elements.playIcon.textContent = '⏸️';
-        this.elements.trackInfo.classList.add('playing');
-        if (this.currentVisualizer && this.currentVisualizer.startVisualization) {
-          this.currentVisualizer.startVisualization(this.analyser, this.dataArray, this.ctx, this.canvas);
-        }
-        
-        // Reset random timer when starting playback
-        this.randomTimer = 0;
       }
     } catch (error) {
       console.error('Playback error:', error);
@@ -667,12 +784,272 @@ class VizWiz {
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
   }
+  
+  handleKeyboardShortcuts(e) {
+    // Don't trigger shortcuts if user is typing in an input
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+    
+    switch (e.code) {
+      case 'Space':
+        e.preventDefault();
+        if (this.audioElement.src || this.isCapturing) {
+          this.togglePlayback();
+        }
+        break;
+      case 'KeyF':
+        e.preventDefault();
+        this.toggleFullscreen();
+        break;
+      case 'KeyR':
+        e.preventDefault();
+        this.elements.randomCheckbox.checked = !this.elements.randomCheckbox.checked;
+        this.elements.randomCheckbox.dispatchEvent(new Event('change'));
+        break;
+      case 'KeyS':
+        e.preventDefault();
+        if (this.currentVisualizer && this.currentVisualizer.toggleSettings) {
+          this.currentVisualizer.toggleSettings();
+        }
+        break;
+      case 'ArrowLeft':
+        e.preventDefault();
+        this.switchToPreviousVisualizer();
+        break;
+      case 'ArrowRight':
+        e.preventDefault();
+        this.switchToNextVisualizer();
+        break;
+      case 'KeyM':
+        e.preventDefault();
+        if (this.currentVisualizer && this.currentVisualizer.setSetting) {
+          const currentMutation = this.currentVisualizer.mutationEnabled || false;
+          this.currentVisualizer.setSetting('mutateMode', !currentMutation);
+          this.updateUIFromVisualizer(this.currentVisualizer);
+        }
+        break;
+      case 'KeyP':
+        if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          this.togglePerformanceMonitor();
+        }
+        break;
+      case 'KeyC':
+        e.preventDefault();
+        this.toggleSystemAudioCapture();
+        break;
+    }
+  }
+  
+  switchToPreviousVisualizer() {
+    const select = this.elements.visualizerSelect;
+    const currentIndex = select.selectedIndex;
+    const newIndex = currentIndex > 0 ? currentIndex - 1 : select.options.length - 1;
+    select.selectedIndex = newIndex;
+    this.switchVisualizer(select.value);
+  }
+  
+  switchToNextVisualizer() {
+    const select = this.elements.visualizerSelect;
+    const currentIndex = select.selectedIndex;
+    const newIndex = currentIndex < select.options.length - 1 ? currentIndex + 1 : 0;
+    select.selectedIndex = newIndex;
+    this.switchVisualizer(select.value);
+  }
+  
+  togglePerformanceMonitor() {
+    let perfDiv = document.getElementById('performanceStats');
+    
+    if (!perfDiv) {
+      // Create performance monitor
+      perfDiv = document.createElement('div');
+      perfDiv.id = 'performanceStats';
+      perfDiv.className = 'performance-stats';
+      document.body.appendChild(perfDiv);
+      
+      // Update performance stats every second
+      this.perfInterval = setInterval(() => {
+        const stats = window.VisualizerRegistry.getPerformanceStats();
+        perfDiv.innerHTML = `FPS: ${stats.fps}<br>Render: ${stats.renderTime}`;
+      }, 1000);
+    } else {
+      // Remove performance monitor
+      perfDiv.remove();
+      if (this.perfInterval) {
+        clearInterval(this.perfInterval);
+        this.perfInterval = null;
+      }
+    }
+  }
+  
+  async toggleSystemAudioCapture() {
+    if (this.isCapturing) {
+      // Stop capturing
+      this.stopSystemAudioCapture();
+    } else {
+      // Start capturing
+      await this.startSystemAudioCapture();
+    }
+  }
+  
+  async startSystemAudioCapture() {
+    try {
+      // Check if getDisplayMedia is supported
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+        alert('Screen capture with audio is not supported in this browser. Please use Chrome, Edge, or Firefox.');
+        return;
+      }
+      
+      // Update UI to show we're requesting permission
+      this.elements.captureBtn.textContent = '🔄 Requesting Permission...';
+      this.elements.captureBtn.disabled = true;
+      
+      // Request screen capture with audio (video is required for getDisplayMedia to work)
+      this.mediaStream = await navigator.mediaDevices.getDisplayMedia({
+        video: true, // Required for getDisplayMedia, but we'll ignore the video track
+        audio: {
+          echoCancellation: false,
+          noiseSuppression: false,
+          autoGainControl: false,
+          sampleRate: 48000
+        }
+      });
+      
+      // Check if audio track is available
+      const audioTracks = this.mediaStream.getAudioTracks();
+      const videoTracks = this.mediaStream.getVideoTracks();
+      
+      if (audioTracks.length === 0) {
+        alert('No audio track found. Make sure to:\n1. Select "Share system audio" or "Share tab audio" in the dialog\n2. Choose a tab or application that is currently playing audio\n3. Grant permission when prompted');
+        this.mediaStream.getTracks().forEach(track => track.stop());
+        return;
+      }
+      
+      // Stop the video track since we only need audio
+      videoTracks.forEach(track => track.stop());
+      
+      // Stop current audio if playing
+      if (this.isPlaying) {
+        this.audioElement.pause();
+        this.isPlaying = false;
+        this.elements.playIcon.textContent = '▶️';
+        if (this.currentVisualizer && this.currentVisualizer.stopVisualization) {
+          this.currentVisualizer.stopVisualization();
+        }
+      }
+      
+      // Create audio context if needed
+      if (this.audioContext.state === 'suspended') {
+        await this.audioContext.resume();
+      }
+      
+      // Connect the media stream to the analyser
+      if (this.audioSource) {
+        this.audioSource.disconnect();
+      }
+      
+      this.audioSource = this.audioContext.createMediaStreamSource(this.mediaStream);
+      this.audioSource.connect(this.analyser);
+      
+      // Update UI
+      this.isCapturing = true;
+      this.elements.captureBtn.innerHTML = '<span>⏹️</span> Stop Capture';
+      this.elements.captureBtn.classList.add('active');
+      this.elements.captureBtn.disabled = false; // Re-enable the button
+      this.elements.trackTitle.textContent = 'System Audio Capture';
+      this.elements.trackDetails.textContent = 'Capturing audio from your system';
+      
+      // Enable controls
+      this.elements.playBtn.disabled = false;
+      this.elements.visualizerSelect.disabled = false;
+      this.elements.settingsBtn.disabled = false;
+      this.elements.fullscreenBtn.disabled = false;
+      
+      // Auto-start visualization
+      this.isPlaying = true;
+      this.elements.playIcon.textContent = '⏸️';
+      this.elements.trackInfo.classList.add('playing');
+      if (this.currentVisualizer && this.currentVisualizer.startVisualization) {
+        this.currentVisualizer.startVisualization(this.analyser, this.dataArray, this.ctx, this.canvas);
+      }
+      
+      // Handle stream ending
+      this.mediaStream.getAudioTracks()[0].addEventListener('ended', () => {
+        this.stopSystemAudioCapture();
+      });
+      
+      console.log('System audio capture started successfully');
+      console.log('Audio tracks:', this.mediaStream.getAudioTracks().length);
+      console.log('Video tracks:', this.mediaStream.getVideoTracks().length);
+      
+    } catch (error) {
+      console.error('Failed to start system audio capture:', error);
+      
+      // Reset button state
+      this.elements.captureBtn.innerHTML = '<span>🎵</span> Capture System Audio';
+      this.elements.captureBtn.disabled = false;
+      
+      let errorMessage = 'Failed to capture system audio.\n\n';
+      if (error.name === 'NotAllowedError') {
+        errorMessage += 'Permission was denied. Please:\n1. Click "Capture System Audio" again\n2. Select "Allow" when prompted\n3. Choose "Share system audio" or "Share tab audio"\n4. Select a tab/app that is playing audio';
+      } else if (error.name === 'NotSupportedError') {
+        errorMessage += 'This feature requires a modern browser (Chrome, Edge, or Firefox).\nSafari is not supported.';
+      } else if (error.name === 'NotFoundError') {
+        errorMessage += 'No audio source found. Make sure:\n1. An application is currently playing audio\n2. You select "Share system audio" in the dialog\n3. Your system audio is not muted';
+      } else {
+        errorMessage += `Error: ${error.message}\n\nTips:\n• Try selecting "Entire Screen" and check "Share system audio"\n• Make sure audio is playing from another app\n• Use Chrome or Edge for best compatibility`;
+      }
+      
+      alert(errorMessage);
+    }
+  }
+  
+  stopSystemAudioCapture() {
+    if (this.mediaStream) {
+      // Stop all tracks
+      this.mediaStream.getTracks().forEach(track => track.stop());
+      this.mediaStream = null;
+    }
+    
+    if (this.audioSource) {
+      this.audioSource.disconnect();
+      this.audioSource = null;
+    }
+    
+    // Update UI
+    this.isCapturing = false;
+    this.isPlaying = false;
+    this.elements.captureBtn.innerHTML = '<span>🎵</span> Capture System Audio';
+    this.elements.captureBtn.classList.remove('active');
+    this.elements.playIcon.textContent = '▶️';
+    this.elements.trackInfo.classList.remove('playing');
+    
+    // Stop visualization
+    if (this.currentVisualizer && this.currentVisualizer.stopVisualization) {
+      this.currentVisualizer.stopVisualization();
+    }
+    
+    // Reset track info
+    this.elements.trackTitle.innerHTML = `
+      <div style='font-size:.65em; color:#0df'>
+        VizWiz &copy; 2025 Robin Nixon
+      </div>
+      Load/drop music file or capture audio to begin
+    `;
+    this.elements.trackDetails.textContent = 'Drag & drop, click "Load Music", or capture system audio';
+    
+    // Disable some controls
+    this.elements.playBtn.disabled = true;
+    this.elements.repeatBtn.disabled = true;
+    this.elements.progressBar.disabled = true;
+    
+    console.log('System audio capture stopped');
+  }
 }
 
 // Initialize when DOM is ready
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   const vizwiz = new VizWiz();
-  vizwiz.init();
+  await vizwiz.init();
   
   // Expose vizwiz globally for debugging
   window.vizwiz = vizwiz;
@@ -703,6 +1080,39 @@ window.VisualizerRegistry = {
   },
   
   // === SHARED UTILITIES FOR ALL VISUALIZERS ===
+  
+  // Performance monitoring
+  performanceStats: {
+    frameCount: 0,
+    lastFpsUpdate: 0,
+    fps: 0,
+    renderTime: 0
+  },
+  
+  /**
+   * Monitor performance and provide stats
+   */
+  updatePerformanceStats(renderStartTime) {
+    this.performanceStats.frameCount++;
+    this.performanceStats.renderTime = performance.now() - renderStartTime;
+    
+    const now = performance.now();
+    if (now - this.performanceStats.lastFpsUpdate >= 1000) {
+      this.performanceStats.fps = this.performanceStats.frameCount;
+      this.performanceStats.frameCount = 0;
+      this.performanceStats.lastFpsUpdate = now;
+    }
+  },
+  
+  /**
+   * Get current performance stats
+   */
+  getPerformanceStats() {
+    return {
+      fps: this.performanceStats.fps,
+      renderTime: this.performanceStats.renderTime.toFixed(2) + 'ms'
+    };
+  },
   
   /**
    * Clean floating point numbers for UI display based on step precision
@@ -791,6 +1201,52 @@ window.VisualizerRegistry = {
     }
     
     return mutations;
+  },
+  
+  /**
+   * Analyze frequency data and return structured audio information
+   */
+  analyzeFrequencyData(dataArray, sensitivity = 1.0) {
+    const length = dataArray.length;
+    const bassEnd = Math.floor(length * 0.1);      // 0-10% for bass
+    const midEnd = Math.floor(length * 0.4);       // 10-40% for mids  
+    const trebleEnd = Math.floor(length * 0.8);    // 40-80% for treble
+    
+    // Calculate averages for each band
+    let bassSum = 0, midSum = 0, trebleSum = 0, highSum = 0;
+    
+    for (let i = 0; i < bassEnd; i++) {
+      bassSum += dataArray[i];
+    }
+    
+    for (let i = bassEnd; i < midEnd; i++) {
+      midSum += dataArray[i];
+    }
+    
+    for (let i = midEnd; i < trebleEnd; i++) {
+      trebleSum += dataArray[i];
+    }
+    
+    for (let i = trebleEnd; i < length; i++) {
+      highSum += dataArray[i];
+    }
+    
+    // Normalize and apply sensitivity
+    const bass = (bassSum / bassEnd / 255) * sensitivity;
+    const mid = (midSum / (midEnd - bassEnd) / 255) * sensitivity;
+    const treble = (trebleSum / (trebleEnd - midEnd) / 255) * sensitivity;
+    const high = (highSum / (length - trebleEnd) / 255) * sensitivity;
+    
+    const overall = (bass + mid + treble + high) / 4;
+    
+    return {
+      bass: Math.min(1, bass),
+      mid: Math.min(1, mid), 
+      treble: Math.min(1, treble),
+      high: Math.min(1, high),
+      overall: Math.min(1, overall),
+      peak: Math.max(bass, mid, treble, high)
+    };
   },
   
   /**

@@ -1,0 +1,6 @@
+.vscode/
+
+# Test files
+test.html
+system-audio-test.html
+browser-support-test.html
