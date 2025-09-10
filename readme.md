@@ -57,7 +57,7 @@ Transform any audio into stunning visual experiences! VizWiz is a powerful, enti
 ## 🎮 Usage
 
 ### System Audio Capture
-1. Click **"🎵 Capture System Audio"** or press **'C'**
+1. Click **"🎵 Capture Audio"** or press **'C'**
 2. Select screen/application in browser dialog
 3. **Important**: Check "Share system audio" or "Share tab audio"
 4. Start playing audio from any app (Spotify, YouTube, games, etc.)
