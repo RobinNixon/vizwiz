@@ -39,13 +39,8 @@ Transform any audio into stunning visual experiences! VizWiz is a powerful, enti
 
 1. **Clone or Download**
    ```bash
-<<<<<<< HEAD
    git clone https://github.com/RobinNixon/vizwiz.git
-   cd vizwiz-main
-=======
-   git clone https://github.com/yourusername/vizwiz.git
    cd vizwiz-main # Or wherever you save the app
->>>>>>> 3f9cb620cc431bc8b9c0003fed8681acf49d9b31
    ```
 
 2. **Open in Browser**
