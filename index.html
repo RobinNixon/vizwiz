@@ -16,10 +16,13 @@
         <button id="fileBtn" class="btn primary">
           <span>📁</span> Load Music
         </button>
-        <button id="captureBtn" class="btn" title="Capture audio from any app (Spotify, YouTube, games, etc.)">
-          <span>🎵</span> Capture System Audio
+        <button id="playlistBtn" class="btn" title="Toggle playlist panel">
+          <span>📋</span> Playlist
         </button>
-        <input type="file" id="fileInput" accept="audio/*" style="display: none;">
+        <button id="captureBtn" class="btn" title="Capture audio from any app (Spotify, YouTube, games, etc.)">
+          <span>🎵</span> Capture Audio
+        </button>
+        <input type="file" id="fileInput" accept="audio/*" multiple style="display: none;">
       </div>
       <div class="control-group player-controls">
         <button id="playBtn" class="btn" disabled>
@@ -31,6 +34,12 @@
             <span id="currentTime">0:00</span> / <span id="duration">0:00</span>
           </div>
         </div>
+        <button id="prevBtn" class="btn" disabled title="Previous Track">
+          <span>⏮️</span>
+        </button>
+        <button id="nextBtn" class="btn" disabled title="Next Track">
+          <span>⏭️</span>
+        </button>
         <button id="repeatBtn" class="btn" disabled title="Repeat Off">
           <span id="repeatIcon">↩️</span>
         </button>
@@ -64,6 +73,25 @@
           Load/drop music file or capture audio to begin
         </h2>
         <p id="trackDetails">Drag &amp; drop, click "Load Music", or capture system audio</p>
+      </div>
+      <div id="playlistPanel" class="hidden">
+        <div class="playlist-header">
+          <h3>Playlist (<span id="playlistCount">0</span> tracks)</h3>
+          <button id="closePlaylistBtn" class="btn-close">✕</button>
+        </div>
+        <div class="playlist-content">
+          <div id="playlistItems"></div>
+          <div class="playlist-controls">
+            <label>
+              Crossfade (<span id="crossfadeDuration">10</span>s)
+              <input type="range" id="crossfadeSlider" min="0" max="20" value="10"
+                style="width: 100px; margin-left: 10px;">
+            </label>
+            <button id="shuffleBtn" class="btn" style="margin-top: 10px; margin-left: 30px;">
+              🔀 Shuffle Playlist
+            </button>
+          </div>
+        </div>
       </div>
     </div>
     <div id="settingsPanel" class="hidden">
@@ -101,10 +129,10 @@
   </div>
   <audio id="audioPlayer" preload="auto"></audio>
   <script src='vizwiz.js'></script>
-  
+
   <!-- Load visualizer registry (contains list of all visualizers) -->
   <script src='visualizers/registry.js'></script>
-  
+
   <!-- Visualizers are now loaded dynamically from the registry -->
 </body>
 

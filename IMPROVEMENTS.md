@@ -126,6 +126,14 @@ All visualizers follow this consistent pattern:
 - **Keyboard shortcut**: 'C' key to toggle capture
 - **Visual feedback**: Active capture indicator with animation
 
+### 7. Enhanced Playlist & Crossfade System
+- **Always-on Crossfade**: Seamless transitions controlled by duration slider (0-20 seconds)
+- **Instant Switching**: 0-second crossfade for DJ-style instant track changes
+- **Smart Crossfade Logic**: Automatic crossfade timing based on track length
+- **One-Click Shuffle**: Simple shuffle button that randomizes playlist order immediately
+- **Clean UI**: Removed toggle complexity, streamlined playlist controls
+- **Better Icons**: Improved playlist button icon (📋) for better UX
+
 ## Future Enhancement Opportunities
 1. **WebGL Rendering**: For better performance with large particle counts
 2. **Audio Worklets**: For more advanced audio analysis

@@ -8,6 +8,23 @@ class VizWiz {
     this.analyser = null;
     this.mediaStream = null;
     this.isCapturing = false;
+    
+    // Multi-file support
+    this.playlist = [];
+
+    this.currentTrackIndex = 0;
+    this.crossfadeEnabled = true; // Always enabled, controlled by duration (0 = instant)
+    this.crossfadeDuration = 10000; // 10 seconds
+    this.crossfadeInProgress = false;
+
+    this.nextAudioElement = null;
+    this.nextAudioSource = null;
+    this.crossfadeGain = null;
+    this.nextGain = null;
+    
+    // Track title display
+    this.trackTitleTimer = null;
+    this.trackTitleDisplayDuration = 3000; // 3 seconds
     this.canvas = null;
     this.ctx = null;
     this.currentVisualizer = null;
@@ -59,7 +76,10 @@ class VizWiz {
     this.elements = {
       fileBtn: document.getElementById('fileBtn'),
       fileInput: document.getElementById('fileInput'),
+      playlistBtn: document.getElementById('playlistBtn'),
       captureBtn: document.getElementById('captureBtn'),
+      prevBtn: document.getElementById('prevBtn'),
+      nextBtn: document.getElementById('nextBtn'),
       playBtn: document.getElementById('playBtn'),
       playIcon: document.getElementById('playIcon'),
       repeatBtn: document.getElementById('repeatBtn'),
@@ -82,6 +102,10 @@ class VizWiz {
     this.canvas = document.getElementById('visualizerCanvas');
     this.ctx = this.canvas.getContext('2d');
     this.audioElement = document.getElementById('audioPlayer');
+    
+    // Set up initial audio element event listeners
+    this.setupAudioElementListeners();
+    
     this.resizeCanvas();
   }
   
@@ -99,15 +123,93 @@ class VizWiz {
     }
   }
   
+  setupAudioElementListeners() {
+    if (!this.audioElement) return;
+    
+    // Store references to the bound functions so we can remove them later
+    if (!this.boundAudioListeners) {
+      this.boundAudioListeners = {
+        loadedmetadata: () => this.onAudioLoaded(),
+        timeupdate: () => this.updateProgress(),
+        ended: () => this.onTrackEnded()
+      };
+    }
+    
+    // Remove old listeners if they exist (prevents duplicate listeners)
+    if (this.audioElement.removeEventListener) {
+      this.audioElement.removeEventListener('loadedmetadata', this.boundAudioListeners.loadedmetadata);
+      this.audioElement.removeEventListener('timeupdate', this.boundAudioListeners.timeupdate);
+      this.audioElement.removeEventListener('ended', this.boundAudioListeners.ended);
+    }
+    
+    // Add new listeners
+    this.audioElement.addEventListener('loadedmetadata', this.boundAudioListeners.loadedmetadata);
+    this.audioElement.addEventListener('timeupdate', this.boundAudioListeners.timeupdate);
+    this.audioElement.addEventListener('ended', this.boundAudioListeners.ended);
+    
+    console.log('Audio element listeners set up');
+  }
+  
   setupEventListeners() {
     this.elements.fileBtn.addEventListener('click', () => {
       this.elements.fileInput.click();
     });
     
-    this.elements.fileInput.addEventListener('change', (e) => {
-      if (e.target.files.length > 0) {
-        this.loadAudioFile(e.target.files[0], true);
+    this.elements.fileInput.addEventListener('change', async (e) => {
+      try {
+        const files = e.target.files;
+        console.log(`Selected ${files.length} files via file picker`);
+        
+        if (files.length === 0) return;
+        
+        // File picker can handle more files than drag & drop
+        const MAX_FILE_PICKER_FILES = 2500;
+        if (files.length > MAX_FILE_PICKER_FILES) {
+          this.showFileError(
+            `Too many files selected (${files.length})!\n\n` +
+            `Please select ${MAX_FILE_PICKER_FILES} files or fewer.`
+          );
+          return;
+        }
+        
+        // Filter for audio files
+        const audioFiles = Array.from(files).filter(file => file.type.startsWith('audio/'));
+        console.log(`Found ${audioFiles.length} audio files out of ${files.length} total`);
+        
+        if (audioFiles.length === 0) {
+          this.showFileError(
+            `No audio files found in the ${files.length} selected file(s).\n\n` +
+            `Supported formats: MP3, WAV, FLAC, OGG, M4A, AAC`
+          );
+          return;
+        }
+        
+        // Show progress for large selections
+        if (audioFiles.length > 100) {
+          console.log(`Processing ${audioFiles.length} audio files...`);
+        }
+        
+        await this.handleNewFiles(audioFiles);
+        
+      } catch (error) {
+        console.error('File input error:', error);
+        this.showFileError(
+          `Error processing selected files: ${error.message}\n\n` +
+          `Please try selecting fewer files.`
+        );
       }
+    });
+    
+    this.elements.playlistBtn.addEventListener('click', () => {
+      this.togglePlaylistPanel();
+    });
+    
+    this.elements.prevBtn.addEventListener('click', () => {
+      this.previousTrack(true); // true = manual/instant
+    });
+    
+    this.elements.nextBtn.addEventListener('click', () => {
+      this.nextTrack(true); // true = manual/instant
     });
     
     this.elements.captureBtn.addEventListener('click', () => {
@@ -184,21 +286,39 @@ class VizWiz {
       });
     }
     
+    // Playlist panel event listeners
+    const closePlaylistBtn = document.getElementById('closePlaylistBtn');
+    const crossfadeSlider = document.getElementById('crossfadeSlider');
+    const crossfadeDurationSpan = document.getElementById('crossfadeDuration');
+    const shuffleBtn = document.getElementById('shuffleBtn');
+    
+    if (closePlaylistBtn) {
+      closePlaylistBtn.addEventListener('click', () => {
+        this.hidePlaylistPanel();
+      });
+    }
+    
+    if (crossfadeSlider && crossfadeDurationSpan) {
+      crossfadeSlider.addEventListener('input', (e) => {
+        const value = parseInt(e.target.value);
+        this.crossfadeDuration = value * 1000;
+        crossfadeDurationSpan.textContent = value;
+        console.log(`Crossfade duration set to: ${value}s ${value === 0 ? '(instant switching)' : ''}`);
+      });
+    }
+    
+    if (shuffleBtn) {
+      shuffleBtn.addEventListener('click', () => {
+        this.shufflePlaylist();
+        console.log('Playlist shuffled');
+      });
+    }
+    
     this.elements.fullscreenBtn.addEventListener('click', () => {
       this.toggleFullscreen();
     });
     
-    this.audioElement.addEventListener('loadedmetadata', () => {
-      this.onAudioLoaded();
-    });
-    
-    this.audioElement.addEventListener('timeupdate', () => {
-      this.updateProgress();
-    });
-    
-    this.audioElement.addEventListener('ended', () => {
-      this.onTrackEnded();
-    });
+    // Audio element listeners are set up in setupAudioElementListeners()
     
     this.canvas.addEventListener('click', () => {
       if (this.audioElement.src) {
@@ -228,18 +348,55 @@ class VizWiz {
       container.classList.remove('dragover');
     });
     
-    container.addEventListener('drop', (e) => {
+    container.addEventListener('drop', async (e) => {
       e.preventDefault();
       container.classList.remove('dragover');
       
-      const files = e.dataTransfer.files;
-      if (files.length > 0) {
-        for (let file of files) {
-          if (file.type.startsWith('audio/')) {
-            this.loadAudioFile(file, true);
-            break;
-          }
+      try {
+        const files = e.dataTransfer.files;
+        console.log(`Dropped ${files.length} files`);
+        
+        if (files.length === 0) {
+          this.showFileError('No files detected in drop. Please try again.');
+          return;
         }
+        
+        // Check for reasonable file limit for drag & drop
+        const MAX_DRAG_DROP_FILES = 500;
+        if (files.length > MAX_DRAG_DROP_FILES) {
+          this.showFileError(
+            `Too many files (${files.length})!\n\n` +
+            `Drag & drop is limited to ${MAX_DRAG_DROP_FILES} files.\n` +
+            `For large collections, please use "Load Music" button instead.`
+          );
+          return;
+        }
+        
+        // Filter for audio files
+        const audioFiles = Array.from(files).filter(file => file.type.startsWith('audio/'));
+        console.log(`Found ${audioFiles.length} audio files out of ${files.length} total`);
+        
+        if (audioFiles.length === 0) {
+          this.showFileError(
+            `No audio files found in the ${files.length} dropped file(s).\n\n` +
+            `Supported formats: MP3, WAV, FLAC, OGG, M4A, AAC`
+          );
+          return;
+        }
+        
+        // Show progress for large drops
+        if (audioFiles.length > 50) {
+          console.log(`Processing ${audioFiles.length} audio files...`);
+        }
+        
+        await this.handleNewFiles(audioFiles);
+        
+      } catch (error) {
+        console.error('Drag & drop error:', error);
+        this.showFileError(
+          `Error processing dropped files: ${error.message}\n\n` +
+          `Try using "Load Music" button instead.`
+        );
       }
     });
   }
@@ -576,11 +733,33 @@ class VizWiz {
         }
       }
 
+      // Reset crossfade state
+      this.crossfadeInProgress = false;
+
+      // CRITICAL: Clean up resources and create new audio element for single files too
+      this.disconnectAudioSource();
+      this.createNewAudioElement();
+
       const url = URL.createObjectURL(file);
       this.audioElement.src = url;
       
+      // Create a single-item playlist for consistency
+      const track = {
+        file: file,
+        url: url,
+        title: file.name.replace(/\.[^/.]+$/, ""),
+        duration: null,
+        originalIndex: 0
+      };
+      this.playlist = [track];
+
+      this.currentTrackIndex = 0;
+      
       this.elements.trackTitle.textContent = file.name.replace(/\.[^/.]+$/, "");
       this.elements.trackDetails.textContent = `${this.formatFileSize(file.size)} • ${file.type}`;
+      
+      // Update playlist UI
+      this.updatePlaylistUI();
       
       if (autoPlay) {
         const playWhenReady = () => {
@@ -623,21 +802,103 @@ class VizWiz {
   }
   
   onAudioLoaded() {
-    if (!this.audioSource) {
-      this.audioSource = this.audioContext.createMediaElementSource(this.audioElement);
-      this.audioSource.connect(this.analyser);
-      this.analyser.connect(this.audioContext.destination);
+    try {
+      // CRITICAL: Only create source if we don't have one already
+      if (!this.audioSource) {
+        console.log('Creating new MediaElementSource');
+        this.audioSource = this.audioContext.createMediaElementSource(this.audioElement);
+        this.audioSource.connect(this.analyser);
+        this.analyser.connect(this.audioContext.destination);
+      }
+      
+      this.elements.playBtn.disabled = false;
+      this.elements.repeatBtn.disabled = false;
+      this.elements.progressBar.disabled = false;
+      this.elements.visualizerSelect.disabled = false;
+      this.elements.settingsBtn.disabled = false;
+      this.elements.fullscreenBtn.disabled = false;
+      
+      // Enable playlist controls if we have a playlist
+      if (this.playlist.length > 0) {
+        this.elements.prevBtn.disabled = false;
+        this.elements.nextBtn.disabled = false;
+      }
+      
+      this.elements.duration.textContent = this.formatTime(this.audioElement.duration);
+      console.log('Audio loaded and connected to analyser');
+      
+    } catch (error) {
+      console.error('Error in onAudioLoaded:', error);
+      // Try to recover by creating a new audio element
+      this.createNewAudioElement();
+    }
+  }
+  
+  // CRITICAL: Proper resource cleanup to prevent "stream in use" errors
+  disconnectAudioSource() {
+    if (this.audioSource) {
+      try {
+        this.audioSource.disconnect();
+      } catch (error) {
+        console.warn('Error disconnecting audio source:', error);
+      }
+      this.audioSource = null;
     }
     
-    this.elements.playBtn.disabled = false;
-    this.elements.repeatBtn.disabled = false;
-    this.elements.progressBar.disabled = false;
-    this.elements.visualizerSelect.disabled = false;
-    this.elements.settingsBtn.disabled = false;
-    this.elements.fullscreenBtn.disabled = false;
+    if (this.nextAudioSource) {
+      try {
+        this.nextAudioSource.disconnect();
+      } catch (error) {
+        console.warn('Error disconnecting next audio source:', error);
+      }
+      this.nextAudioSource = null;
+    }
     
-    this.elements.duration.textContent = this.formatTime(this.audioElement.duration);
-    // console.log('Audio loaded and connected to analyser');
+    if (this.crossfadeGain) {
+      try {
+        this.crossfadeGain.disconnect();
+      } catch (error) {
+        console.warn('Error disconnecting crossfade gain:', error);
+      }
+      this.crossfadeGain = null;
+    }
+    
+    if (this.nextGain) {
+      try {
+        this.nextGain.disconnect();
+      } catch (error) {
+        console.warn('Error disconnecting next gain:', error);
+      }
+      this.nextGain = null;
+    }
+  }
+  
+  // CRITICAL: Create fresh audio element to avoid "already connected" errors
+  createNewAudioElement() {
+    // Remove old audio element completely
+    if (this.audioElement) {
+      this.audioElement.pause();
+      this.audioElement.src = '';
+      this.audioElement.load(); // Force cleanup
+      
+      // Remove from DOM if it exists
+      if (this.audioElement.parentNode) {
+        this.audioElement.parentNode.removeChild(this.audioElement);
+      }
+    }
+    
+    // Create completely new audio element
+    this.audioElement = document.createElement('audio');
+    this.audioElement.id = 'audioPlayer';
+    this.audioElement.preload = 'auto';
+    
+    // Re-add event listeners using centralized method
+    this.setupAudioElementListeners();
+    
+    // Add to DOM (hidden)
+    document.body.appendChild(this.audioElement);
+    
+    console.log('Created new audio element');
   }
  
   async togglePlayback() {
@@ -658,7 +919,10 @@ class VizWiz {
           
           this.isPlaying = true;
           this.elements.playIcon.textContent = '⏸️';
-          this.elements.trackInfo.classList.add('playing');
+          
+          // Show track title temporarily when starting playback
+          this.showTrackTitleTemporarily();
+          
           if (this.currentVisualizer && this.currentVisualizer.startVisualization) {
             this.currentVisualizer.startVisualization(this.analyser, this.dataArray, this.ctx, this.canvas);
           }
@@ -683,7 +947,10 @@ class VizWiz {
           await this.audioElement.play();
           this.isPlaying = true;
           this.elements.playIcon.textContent = '⏸️';
-          this.elements.trackInfo.classList.add('playing');
+          
+          // Show track title temporarily when starting playback
+          this.showTrackTitleTemporarily();
+          
           if (this.currentVisualizer && this.currentVisualizer.startVisualization) {
             this.currentVisualizer.startVisualization(this.analyser, this.dataArray, this.ctx, this.canvas);
           }
@@ -704,13 +971,64 @@ class VizWiz {
     const progress = (this.audioElement.currentTime / this.audioElement.duration) * 100;
     this.elements.progressBar.value = progress;
     this.elements.currentTime.textContent = this.formatTime(this.audioElement.currentTime);
+    
+    // Check if we should start crossfading (start crossfade before track ends)
+    this.checkForCrossfadeStart();
+  }
+  
+  checkForCrossfadeStart() {
+    if (!this.isPlaying) return;
+    if (this.crossfadeInProgress) return; // Already crossfading
+    
+    // Handle instant switching (0 seconds crossfade)
+    if (this.crossfadeDuration === 0) {
+      // Check if we're at the very end for instant switching
+      const timeRemaining = this.audioElement.duration - this.audioElement.currentTime;
+      if (timeRemaining <= 0.1) {
+        this.playNext();
+      }
+      return;
+    }
+    
+    // Don't crossfade if only one track and not repeating all
+    if (this.playlist.length <= 1 && this.repeatMode !== 'all') return;
+    
+    const timeRemaining = this.audioElement.duration - this.audioElement.currentTime;
+    const crossfadeStartTime = (this.crossfadeDuration / 1000) + 0.5; // Start crossfade + 0.5s buffer
+    
+    // Start crossfade when we're near the end of the track
+    if (timeRemaining <= crossfadeStartTime && timeRemaining > 0.1) {
+      console.log(`Starting crossfade with ${timeRemaining.toFixed(1)}s remaining`);
+      this.crossfadeInProgress = true;
+      
+      // Calculate next track index
+      let nextIndex = this.currentTrackIndex + 1;
+      if (nextIndex >= this.playlist.length) {
+        if (this.repeatMode === 'all') {
+          nextIndex = 0;
+        } else {
+          return; // End of playlist, no crossfade
+        }
+      }
+      
+      this.crossfadeToTrack(nextIndex);
+    }
   }
   
   onTrackEnded() {
-    if (this.repeatMode === 'one') {
+    if (this.crossfadeInProgress) {
+      // Crossfade is already in progress, let it complete naturally
+      console.log('Track ended during crossfade - letting crossfade complete');
+      return;
+    } else if (this.playlist.length > 1) {
+      // Multiple tracks - advance to next (handles repeat modes in nextTrack)
+      this.nextTrack(); // Automatic track change, allow crossfade
+    } else if (this.playlist.length === 1 && this.repeatMode === 'one') {
+      // Single track with repeat - restart current track
       this.audioElement.currentTime = 0;
       this.audioElement.play();
     } else {
+      // End of playback
       this.isPlaying = false;
       this.elements.playIcon.textContent = '▶️';
       if (this.currentVisualizer && this.currentVisualizer.stopVisualization) {
@@ -721,21 +1039,45 @@ class VizWiz {
   }
   
   toggleRepeatMode() {
-    switch (this.repeatMode) {
-      case 'none':
-        this.repeatMode = 'one';
-        this.elements.repeatIcon.textContent = '🔄';
-        this.elements.repeatBtn.classList.add('active');
-        this.elements.repeatBtn.title = 'Repeat: Current Track';
-        break;
-      case 'one':
-        this.repeatMode = 'none';
-        this.elements.repeatIcon.textContent = '↩️';
-        this.elements.repeatBtn.classList.remove('active');
-        this.elements.repeatBtn.title = 'Repeat: Off';
-        break;
+    if (this.playlist.length > 0) {
+      // Playlist mode: none -> all -> one -> none
+      switch (this.repeatMode) {
+        case 'none':
+          this.repeatMode = 'all';
+          this.elements.repeatIcon.textContent = '🔁';
+          this.elements.repeatBtn.classList.add('active');
+          this.elements.repeatBtn.title = 'Repeat: All Tracks';
+          break;
+        case 'all':
+          this.repeatMode = 'one';
+          this.elements.repeatIcon.textContent = '🔂';
+          this.elements.repeatBtn.title = 'Repeat: Current Track';
+          break;
+        case 'one':
+          this.repeatMode = 'none';
+          this.elements.repeatIcon.textContent = '↩️';
+          this.elements.repeatBtn.classList.remove('active');
+          this.elements.repeatBtn.title = 'Repeat: Off';
+          break;
+      }
+    } else {
+      // Single track mode: none -> one -> none
+      switch (this.repeatMode) {
+        case 'none':
+          this.repeatMode = 'one';
+          this.elements.repeatIcon.textContent = '🔄';
+          this.elements.repeatBtn.classList.add('active');
+          this.elements.repeatBtn.title = 'Repeat: Current Track';
+          break;
+        case 'one':
+          this.repeatMode = 'none';
+          this.elements.repeatIcon.textContent = '↩️';
+          this.elements.repeatBtn.classList.remove('active');
+          this.elements.repeatBtn.title = 'Repeat: Off';
+          break;
+      }
     }
-    // console.log('Repeat mode:', this.repeatMode);
+    console.log('Repeat mode:', this.repeatMode);
   }
   
   toggleFullscreen() {
@@ -881,6 +1223,566 @@ class VizWiz {
     }
   }
   
+  // Show track title temporarily when track changes
+  showTrackTitleTemporarily() {
+    // Clear any existing timer
+    if (this.trackTitleTimer) {
+      clearTimeout(this.trackTitleTimer);
+    }
+    
+    // Show track info
+    this.elements.trackInfo.classList.remove('playing');
+    
+    // Hide it after the specified duration
+    this.trackTitleTimer = setTimeout(() => {
+      if (this.isPlaying) {
+        this.elements.trackInfo.classList.add('playing');
+      }
+      this.trackTitleTimer = null;
+    }, this.trackTitleDisplayDuration);
+    
+    console.log(`Showing track title for ${this.trackTitleDisplayDuration / 1000} seconds`);
+  }
+  
+  // Playlist Management Methods
+  async loadPlaylist(files) {
+    let shouldReplace = true;
+    
+    // If playlist already has tracks, ask user what to do
+    if (this.playlist.length > 0) {
+      shouldReplace = await this.askReplaceOrAdd();
+    }
+    
+    if (shouldReplace) {
+      // Clear existing playlist
+      this.playlist = [];
+      this.currentTrackIndex = 0;
+    }
+    
+    // Add files to playlist
+    const startIndex = shouldReplace ? 0 : this.playlist.length;
+    files.forEach((file, index) => {
+      const track = {
+        file: file,
+        url: URL.createObjectURL(file),
+        title: file.name.replace(/\.[^/.]+$/, ""),
+        duration: null,
+        originalIndex: startIndex + index
+      };
+      this.playlist.push(track);
+    });
+    
+    console.log(`Loaded playlist with ${this.playlist.length} tracks`);
+    
+
+    
+    // Load first track (only if replacing or if no track was playing)
+    if (this.playlist.length > 0) {
+      if (shouldReplace || !this.isPlaying) {
+        this.loadTrackFromPlaylist(shouldReplace ? 0 : this.currentTrackIndex, shouldReplace);
+      }
+      this.showPlaylistPanel();
+      this.updatePlaylistUI();
+    }
+  }
+  
+  async handleNewFiles(files) {
+    let shouldReplace = true;
+    
+    // If playlist already has tracks, ask user what to do
+    if (this.playlist.length > 0) {
+      shouldReplace = await this.askReplaceOrAdd();
+    }
+    
+    if (shouldReplace) {
+      if (files.length === 1) {
+        // Single file - load as single track
+        this.loadAudioFile(files[0], true);
+      } else {
+        // Multiple files - create new playlist
+        this.createNewPlaylist(files);
+      }
+    } else {
+      // Add to existing playlist
+      this.addFilesToPlaylist(files);
+    }
+  }
+  
+  async askReplaceOrAdd() {
+    return new Promise((resolve) => {
+      const result = confirm(
+        `You already have ${this.playlist.length} track(s) in your playlist.\n\n` +
+        `Click "OK" to REPLACE your current playlist\n` +
+        `Click "Cancel" to ADD to your current playlist`
+      );
+      resolve(result);
+    });
+  }
+  
+  showFileError(message) {
+    alert(`🎵 VizWiz File Error\n\n${message}`);
+    console.error('File handling error:', message);
+  }
+  
+  addFilesToPlaylist(files) {
+    const startIndex = this.playlist.length;
+    
+    // Add files to existing playlist
+    files.forEach((file, index) => {
+      const track = {
+        file: file,
+        url: URL.createObjectURL(file),
+        title: file.name.replace(/\.[^/.]+$/, ""),
+        duration: null,
+        originalIndex: startIndex + index
+      };
+      this.playlist.push(track);
+    });
+    
+    console.log(`Added ${files.length} track(s) to playlist. Total: ${this.playlist.length} tracks`);
+    
+    // Update UI
+    this.updatePlaylistUI();
+    this.showPlaylistPanel();
+    
+    // If no track is currently playing, start the first new track
+    if (!this.isPlaying && startIndex === 0) {
+      this.loadTrackFromPlaylist(0, true);
+    }
+  }
+  
+  createNewPlaylist(files) {
+    // Clear existing playlist
+    this.playlist = [];
+    this.currentTrackIndex = 0;
+    
+    // Add files to new playlist
+    files.forEach((file, index) => {
+      const track = {
+        file: file,
+        url: URL.createObjectURL(file),
+        title: file.name.replace(/\.[^/.]+$/, ""),
+        duration: null,
+        originalIndex: index
+      };
+      this.playlist.push(track);
+    });
+    
+    console.log(`Created new playlist with ${files.length} tracks`);
+    
+    // Load first track and show playlist
+    if (this.playlist.length > 0) {
+      this.loadTrackFromPlaylist(0, true);
+      this.showPlaylistPanel();
+      this.updatePlaylistUI();
+    }
+  }
+
+  shufflePlaylist() {
+    if (this.playlist.length <= 1) return;
+    
+    // Get current track
+    const currentTrack = this.playlist[this.currentTrackIndex];
+    
+    // Shuffle the playlist using Fisher-Yates algorithm
+    const shuffled = [...this.playlist];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    
+    // Find where the current track ended up
+    this.currentTrackIndex = shuffled.findIndex(track => track === currentTrack);
+    this.playlist = shuffled;
+    
+    console.log(`Shuffled playlist, current track now at index ${this.currentTrackIndex}`);
+    this.updatePlaylistUI();
+  }
+  
+
+  
+  loadTrackFromPlaylist(index, autoPlay = false) {
+    if (index < 0 || index >= this.playlist.length) return;
+    
+    // Stop current playback and clean up resources
+    if (this.isPlaying) {
+      this.audioElement.pause();
+      this.isPlaying = false;
+      this.elements.playIcon.textContent = '▶️';
+      if (this.currentVisualizer && this.currentVisualizer.stopVisualization) {
+        this.currentVisualizer.stopVisualization();
+      }
+    }
+    
+    // Reset crossfade state
+    this.crossfadeInProgress = false;
+    
+    // CRITICAL: Clean up old resources AND create new audio element
+    this.disconnectAudioSource();
+    this.createNewAudioElement();
+    
+    const track = this.playlist[index];
+    this.currentTrackIndex = index;
+    
+    // Load the new track
+    this.audioElement.src = track.url;
+    this.elements.trackTitle.textContent = track.title;
+    this.elements.trackDetails.textContent = `Track ${index + 1} of ${this.playlist.length}`;
+    
+    // Show track title temporarily when track changes
+    if (this.isPlaying) {
+      this.showTrackTitleTemporarily();
+    }
+    
+    // Update playlist UI
+    this.updatePlaylistUI();
+    
+    // Auto-play if requested
+    if (autoPlay) {
+      const playWhenReady = () => {
+        if (this.audioElement.readyState >= 2) {
+          setTimeout(() => {
+            if (!this.isPlaying) {
+              this.togglePlayback();
+            }
+          }, 100);
+        } else {
+          setTimeout(playWhenReady, 50);
+        }
+      };
+      playWhenReady();
+    }
+  }
+  
+  previousTrack() {
+    if (this.playlist.length === 0) return;
+    
+    let newIndex = this.currentTrackIndex - 1;
+    if (newIndex < 0) {
+      newIndex = this.playlist.length - 1; // Loop to end
+    }
+    
+    this.loadTrackFromPlaylist(newIndex, this.isPlaying);
+  }
+  
+  nextTrack(isManual = false) {
+    if (this.playlist.length === 0) return;
+    
+    // If crossfade is in progress and this is manual, stop it immediately
+    if (isManual && this.crossfadeInProgress) {
+      this.stopCrossfade();
+    }
+    
+    let newIndex = this.currentTrackIndex + 1;
+    if (newIndex >= this.playlist.length) {
+      if (this.repeatMode === 'all' || (this.playlist.length === 1 && this.repeatMode === 'one')) {
+        newIndex = 0; // Loop to beginning
+      } else {
+        // End of playlist - stop playback
+        this.isPlaying = false;
+        this.elements.playIcon.textContent = '▶️';
+        if (this.currentVisualizer && this.currentVisualizer.stopVisualization) {
+          this.currentVisualizer.stopVisualization();
+        }
+        this.elements.progressBar.value = 0;
+        return;
+      }
+    }
+    
+    // Manual track changes should be instant, automatic ones can crossfade
+    if (!isManual && this.isPlaying && this.crossfadeDuration > 0 && !this.crossfadeInProgress) {
+      this.crossfadeToTrack(newIndex);
+    } else {
+      this.loadTrackFromPlaylist(newIndex, this.isPlaying);
+    }
+  }
+  
+  previousTrack(isManual = false) {
+    if (this.playlist.length === 0) return;
+    
+    // If crossfade is in progress and this is manual, stop it immediately
+    if (isManual && this.crossfadeInProgress) {
+      this.stopCrossfade();
+    }
+    
+    let newIndex = this.currentTrackIndex - 1;
+    if (newIndex < 0) {
+      if (this.repeatMode === 'all') {
+        newIndex = this.playlist.length - 1; // Loop to end
+      } else {
+        newIndex = 0; // Stay at first track
+      }
+    }
+    
+    // Manual track changes should be instant, automatic ones can crossfade
+    if (!isManual && this.isPlaying && this.crossfadeDuration > 0 && !this.crossfadeInProgress) {
+      this.crossfadeToTrack(newIndex);
+    } else {
+      this.loadTrackFromPlaylist(newIndex, this.isPlaying);
+    }
+  }
+  
+  crossfadeToTrack(newIndex) {
+    if (newIndex < 0 || newIndex >= this.playlist.length) return;
+    
+    console.log(`Crossfading to track ${newIndex}`);
+    
+    // Create next audio element
+    this.nextAudioElement = new Audio();
+    this.nextAudioElement.src = this.playlist[newIndex].url;
+    this.nextAudioElement.volume = this.elements.volumeSlider.value / 100; // Use current volume setting
+    
+    // Set up crossfade when next track is ready
+    this.nextAudioElement.addEventListener('canplaythrough', () => {
+      this.performCrossfade(newIndex);
+    }, { once: true });
+    
+    this.nextAudioElement.load();
+  }
+  
+  async performCrossfade(newIndex) {
+    try {
+      console.log(`Starting crossfade to track ${newIndex}`);
+      
+      // Create gain nodes for crossfading
+      this.crossfadeGain = this.audioContext.createGain();
+      this.nextGain = this.audioContext.createGain();
+      
+      // Disconnect current source and reconnect through gain
+      this.audioSource.disconnect();
+      this.audioSource.connect(this.crossfadeGain);
+      this.crossfadeGain.connect(this.analyser);
+      
+      // Create source for next track
+      this.nextAudioSource = this.audioContext.createMediaElementSource(this.nextAudioElement);
+      this.nextAudioSource.connect(this.nextGain);
+      this.nextGain.connect(this.analyser);
+      
+      // Start next track
+      console.log('Starting next audio element');
+      await this.nextAudioElement.play();
+      console.log(`Next track playing: ${this.nextAudioElement.currentTime}/${this.nextAudioElement.duration}`);
+      
+      // Perform crossfade
+      const fadeTime = this.crossfadeDuration / 1000;
+      const now = this.audioContext.currentTime;
+      
+      console.log(`Crossfading over ${fadeTime} seconds`);
+      
+      // Fade out current track
+      this.crossfadeGain.gain.setValueAtTime(1, now);
+      this.crossfadeGain.gain.linearRampToValueAtTime(0, now + fadeTime);
+      
+      // Fade in next track
+      this.nextGain.gain.setValueAtTime(0, now);
+      this.nextGain.gain.linearRampToValueAtTime(1, now + fadeTime);
+      
+      // Switch tracks after crossfade
+      setTimeout(() => {
+        this.completeCrossfade(newIndex);
+      }, this.crossfadeDuration);
+      
+    } catch (error) {
+      console.error('Crossfade error:', error);
+      // Fallback to regular track switch
+      this.loadTrackFromPlaylist(newIndex, true);
+    }
+  }
+  
+  completeCrossfade(newIndex) {
+    // Stop and clean up old track
+    const oldAudioElement = this.audioElement;
+    oldAudioElement.pause();
+    
+    // Switch to new track
+    this.audioElement = this.nextAudioElement;
+    this.audioSource = this.nextAudioSource;
+    this.currentTrackIndex = newIndex;
+    
+    // CRITICAL: Reset volume to normal (was set to 0 for crossfade)
+    this.audioElement.volume = this.elements.volumeSlider.value / 100;
+    
+    // CRITICAL: Reconnect event listeners to the new audio element
+    this.setupAudioElementListeners();
+    
+    // Clean up crossfade nodes
+    if (this.crossfadeGain) {
+      this.crossfadeGain.disconnect();
+      this.crossfadeGain = null;
+    }
+    
+    // Update UI
+    const track = this.playlist[newIndex];
+    this.elements.trackTitle.textContent = track.title;
+    this.elements.trackDetails.textContent = `Track ${newIndex + 1} of ${this.playlist.length}`;
+    
+    // Show track title temporarily after crossfade
+    this.showTrackTitleTemporarily();
+    
+    this.updatePlaylistUI();
+    
+    // CRITICAL: Update duration display for new track
+    this.elements.duration.textContent = this.formatTime(this.audioElement.duration);
+    
+    // CRITICAL: Reset progress bar to current position of new track
+    this.updateProgress();
+    
+    // Clean up old audio element
+    if (oldAudioElement && oldAudioElement !== this.audioElement) {
+      oldAudioElement.src = '';
+      oldAudioElement.load();
+      if (oldAudioElement.parentNode) {
+        oldAudioElement.parentNode.removeChild(oldAudioElement);
+      }
+    }
+    
+    // Reset for next crossfade
+    this.nextAudioElement = null;
+    this.nextAudioSource = null;
+    this.nextGain = null;
+    this.crossfadeInProgress = false;
+    
+    console.log(`Crossfade completed to track ${newIndex}, duration: ${this.formatTime(this.audioElement.duration)}`);
+  }
+  
+  stopCrossfade() {
+    if (!this.crossfadeInProgress) return;
+    
+    console.log('Stopping crossfade in progress');
+    
+    // Clean up crossfade nodes
+    if (this.crossfadeGain) {
+      this.crossfadeGain.disconnect();
+      this.crossfadeGain = null;
+    }
+    
+    if (this.nextGain) {
+      this.nextGain.disconnect();
+      this.nextGain = null;
+    }
+    
+    // Stop and clean up next audio element
+    if (this.nextAudioElement) {
+      this.nextAudioElement.pause();
+      this.nextAudioElement.src = '';
+      this.nextAudioElement = null;
+    }
+    
+    if (this.nextAudioSource) {
+      this.nextAudioSource.disconnect();
+      this.nextAudioSource = null;
+    }
+    
+    // Reconnect current audio source directly to analyser
+    if (this.audioSource && this.analyser) {
+      this.audioSource.disconnect();
+      this.audioSource.connect(this.analyser);
+    }
+    
+    this.crossfadeInProgress = false;
+  }
+  
+  showPlaylistPanel() {
+    const panel = document.getElementById('playlistPanel');
+    if (panel) {
+      panel.classList.remove('hidden');
+      this.elements.playlistBtn.classList.add('active');
+    }
+  }
+  
+  hidePlaylistPanel() {
+    const panel = document.getElementById('playlistPanel');
+    if (panel) {
+      panel.classList.add('hidden');
+      this.elements.playlistBtn.classList.remove('active');
+    }
+  }
+  
+  togglePlaylistPanel() {
+    const panel = document.getElementById('playlistPanel');
+    if (!panel) return;
+    
+    if (panel.classList.contains('hidden')) {
+      // Show playlist panel
+      if (this.playlist.length === 0) {
+        // No playlist loaded, open file dialog
+        this.elements.fileInput.click();
+      } else {
+        // Show existing playlist
+        this.showPlaylistPanel();
+      }
+    } else {
+      // Hide playlist panel
+      this.hidePlaylistPanel();
+    }
+  }
+  
+  updatePlaylistUI() {
+    const container = document.getElementById('playlistItems');
+    const countSpan = document.getElementById('playlistCount');
+    
+    if (!container || !countSpan) return;
+    
+    countSpan.textContent = this.playlist.length;
+    container.innerHTML = '';
+    
+    this.playlist.forEach((track, index) => {
+      const item = document.createElement('div');
+      item.className = 'playlist-item';
+      if (index === this.currentTrackIndex) {
+        item.classList.add('current');
+        if (this.isPlaying) {
+          item.classList.add('playing');
+        }
+      }
+      
+      item.innerHTML = `
+        <div class="playlist-item-info">
+          <div class="playlist-item-title">${track.title}</div>
+          <div class="playlist-item-details">Track ${index + 1}</div>
+        </div>
+        <div class="playlist-item-controls">
+          <button class="playlist-item-btn" onclick="window.vizwiz.loadTrackFromPlaylist(${index}, true)" title="Play">▶️</button>
+          <button class="playlist-item-btn" onclick="window.vizwiz.removeFromPlaylist(${index})" title="Remove">🗑️</button>
+        </div>
+      `;
+      
+      container.appendChild(item);
+    });
+  }
+  
+  removeFromPlaylist(index) {
+    if (index < 0 || index >= this.playlist.length) return;
+    
+    // Clean up URL
+    URL.revokeObjectURL(this.playlist[index].url);
+    
+    // Remove from playlist
+    this.playlist.splice(index, 1);
+    
+    // Adjust current index if needed
+    if (index < this.currentTrackIndex) {
+      this.currentTrackIndex--;
+    } else if (index === this.currentTrackIndex) {
+      // Current track was removed
+      if (this.playlist.length === 0) {
+        // No more tracks
+        this.audioElement.src = '';
+        this.elements.trackTitle.innerHTML = `
+          <div style='font-size:.65em; color:#0df'>VizWiz &copy; 2025 Robin Nixon</div>
+          Load/drop music file or capture audio to begin
+        `;
+        this.elements.trackDetails.textContent = 'Drag & drop, click "Load Music", or capture system audio';
+      } else {
+        // Load next track or first if at end
+        const newIndex = Math.min(this.currentTrackIndex, this.playlist.length - 1);
+        this.loadTrackFromPlaylist(newIndex, this.isPlaying);
+      }
+    }
+    
+    this.updatePlaylistUI();
+  }
+  
   async toggleSystemAudioCapture() {
     if (this.isCapturing) {
       // Stop capturing
@@ -967,7 +1869,10 @@ class VizWiz {
       // Auto-start visualization
       this.isPlaying = true;
       this.elements.playIcon.textContent = '⏸️';
-      this.elements.trackInfo.classList.add('playing');
+      
+      // Show system audio capture title temporarily
+      this.showTrackTitleTemporarily();
+      
       if (this.currentVisualizer && this.currentVisualizer.startVisualization) {
         this.currentVisualizer.startVisualization(this.analyser, this.dataArray, this.ctx, this.canvas);
       }

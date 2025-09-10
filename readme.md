@@ -1,6 +1,6 @@
 # VizWiz 🎵✨
 
-**Version 1.1** - A modular, browser-based audio visualizer with system capture and plugin architecture
+**Version 1.2** - A modular, browser-based audio visualizer with system capture and enhanced playlist controls
 
 Transform any audio into stunning visual experiences! VizWiz is a powerful, entirely client-side audio visualizer that runs directly in your browser. Load music files, capture system audio from any application, and watch them come alive with reactive visual effects.
 
@@ -16,6 +16,12 @@ Transform any audio into stunning visual experiences! VizWiz is a powerful, enti
 - **Real-time Response** - Frequency-based visual effects that react to bass, mids, and treble
 - **Particle Storm** - Advanced particle system with physics and connections
 - **Dynamic Backgrounds** - Multiple background styles and effects
+
+### 🎵 Audio Control
+- **Smart Crossfade** - Seamless track transitions from instant (0s) to long ambient (20s)
+- **Playlist Management** - Multi-track support with shuffle and repeat modes
+- **System Audio Capture** - Visualize any app's audio in real-time
+- **Multiple Formats** - MP3, WAV, FLAC, and other browser-supported audio
 
 ### ⚙️ Customization & Control
 - **Rich Settings** - Extensive customization for each visualizer
@@ -179,6 +185,15 @@ vizwiz/
 - 🎯 Target/radar displays
 - 🕸️ Network/web patterns
 
+## 🆕 What's New in v1.2
+
+### Enhanced Playlist Controls
+- **Always-On Crossfade** - Seamless transitions controlled by simple 0-20 second slider
+- **Instant Switching** - Set crossfade to 0 for DJ-style instant track changes
+- **One-Click Shuffle** - Simple button to randomize playlist order immediately
+- **Better UI** - Cleaner playlist panel with improved icons and streamlined controls
+- **Smart Logic** - Crossfade timing automatically adjusts based on track length
+
 ## 🆕 What's New in v1.1
 
 ### System Audio Capture
@@ -199,11 +214,18 @@ vizwiz/
 - **Settings Memory** - Visualizer settings persist between switches
 - **Help System** - Built-in keyboard shortcut reference
 
+### Enhanced Playlist & Audio Control
+- **Smart Crossfade** - Always-on crossfade with 0-20 second range (0 = instant switching)
+- **One-Click Shuffle** - Simple shuffle button for instant playlist randomization
+- **Multi-Track Support** - Load multiple files and navigate with previous/next controls
+- **Repeat Modes** - Off, single track, or entire playlist repeat options
+
 ### Quality of Life Improvements
 - **Trail Effects** - Configurable fade intensity for particle trails
 - **Debug Mode** - Real-time audio level monitoring
 - **Error Handling** - Better user guidance for system audio capture
 - **UI Polish** - Improved animations and visual feedback
+- **Clean Controls** - Streamlined playlist panel with better icons and layout
 
 ## 📜 License
 
