@@ -1,6 +1,6 @@
 # VizWiz 🎵✨
 
-**Version 1.2** - A modular, browser-based audio visualizer with system capture and enhanced playlist controls
+**Version 1.3** - A modular, browser-based audio visualizer with professional playlist controls
 
 Transform any audio into stunning visual experiences! VizWiz is a powerful, entirely client-side audio visualizer that runs directly in your browser. Load music files, capture system audio from any application, and watch them come alive with reactive visual effects.
 
@@ -10,18 +10,20 @@ Transform any audio into stunning visual experiences! VizWiz is a powerful, enti
 - **File Support** - MP3, WAV, FLAC, and other browser-supported formats
 - **System Audio Capture** - Visualize Spotify, YouTube, games, or any app audio in real-time
 - **Drag & Drop** - Easy file loading with visual feedback
+- **Large Libraries** - Handle collections of up to 2,500 tracks smoothly
 
 ### 🎨 Visualization
 - **Several Unique Visualizers** - Bars, particles, blobs, fractals, plasma, and more
 - **Real-time Response** - Frequency-based visual effects that react to bass, mids, and treble
-- **Particle Storm** - Advanced particle system with physics and connections
 - **Dynamic Backgrounds** - Multiple background styles and effects
+- **Visualizer Toggle** - Turn off visuals to save CPU resources when needed
 
 ### 🎵 Audio Control
+- **Single/Continuous Modes** - Choose between stopping after one track or continuous playback
 - **Smart Crossfade** - Seamless track transitions from instant (0s) to long ambient (20s)
 - **Playlist Management** - Multi-track support with shuffle and repeat modes
-- **System Audio Capture** - Visualize any app's audio in real-time
-- **Multiple Formats** - MP3, WAV, FLAC, and other browser-supported audio
+- **Live Search** - Instantly find tracks in large collections with real-time filtering
+- **Auto-Scroll** - Current track automatically scrolls into view in large playlists
 
 ### ⚙️ Customization & Control
 - **Rich Settings** - Extensive customization for each visualizer
@@ -57,39 +59,52 @@ Transform any audio into stunning visual experiences! VizWiz is a powerful, enti
 ## 🎮 Usage
 
 ### System Audio Capture
-1. Click **"🎵 Capture Audio"** or press **'C'**
+1. Click **"🎵 Audio Grab"** or press **'A'**
 2. Select screen/application in browser dialog
 3. **Important**: Check "Share system audio" or "Share tab audio"
 4. Start playing audio from any app (Spotify, YouTube, games, etc.)
 5. Watch real-time visualization of your system audio!
 
+### Playlist Features
+- **Search**: Type in the search box to instantly filter tracks by name
+- **Single Mode**: Click the play mode button (🔄) to switch to single-track mode (⏹️)
+- **Shuffle**: Reorganize your playlist while keeping the current track at the top
+- **Crossfade**: Adjust seamless transitions between tracks (0-20 seconds)
+- **Auto-Scroll**: Current track automatically stays visible in large playlists
+
+### Professional Use
+Perfect for radio DJs and live events:
+- Search through large music collections instantly
+- Single-track mode prevents accidental playback of next song
+- Visual confirmation of which track is loaded and playing
+- Works in any browser without installing software
+
 ### Keyboard Shortcuts
 - **Space** - Play/Pause
+- **A** - Toggle System Audio Capture
 - **F** - Toggle Fullscreen
-- **S** - Toggle Settings
-- **R** - Toggle Random Mode
 - **M** - Toggle Mutation Mode
+- **R** - Toggle Random Mode
+- **S** - Toggle Settings
 - **←/→** - Switch Visualizers
-- **C** - Toggle System Audio Capture
 - **Ctrl+P** - Performance Monitor
+- **Escape** - Close open panels
 
 ### Supported Audio Sources
-- **Music Streaming**: Spotify, Apple Music, YouTube Music
+- **Music Streaming**: Spotify, Apple Music, YouTube Music, Online radio etc.
 - **Video Platforms**: YouTube, Netflix, Twitch, any video content
 - **Gaming**: Any game with audio output
 - **Communication**: Discord, Zoom, Teams calls
 - **Browser Tabs**: Isolate specific tab audio
 - **System Sounds**: Notifications, alerts, any audio
 
-## 🛠️ Development
-
 ## 🎨 Make Your Own Visualizers
 
 One of the best things about VizWiz is how easy it is to add new effects.  
-You don’t need to be a coder — you can create visualizers by **chatting with an AI**.
+You don't need to be a coder — you can create visualizers by **chatting with an AI**.
 
 1. Copy and paste or drag and drop the `vizwiz.txt` file (included in this project) into a chat with your favorite AI assistant.  
-2. Describe in as much detail as you can what kind of visualizer you’d like (spirals, flames, galaxies, anything you can imagine).
+2. Describe in as much detail as you can what kind of visualizer you'd like (spirals, flames, galaxies, anything you can imagine).
 3. The AI will give you back a `.viz.js` file (or if you are a coder write your own).
 4. Save that file into the `visualizers/` folder.  
 5. Add its details into `registry.js` using one of the methods below.  
@@ -122,35 +137,6 @@ If you have Node.js installed, you can use the automated utility:
 ```bash
 node add-visualizer.js "yourname.viz.js" "Display Name" "Your Name" "Description"
 ```
-
-#### Step-by-Step Example
-Let's say you want to add a "Spiral Galaxy" visualizer:
-
-1. **Create the file**: `visualizers/spiral.viz.js` (follow the pattern from existing visualizers)
-2. **Edit registry**: Open `visualizers/registry.js` in any text editor
-3. **Add your entry**: Find the array and add:
-   ```javascript
-   {
-     id: 'spiral',
-     name: 'Spiral Galaxy',
-     file: 'spiral.viz.js',
-     author: 'Your Name',
-     description: 'Rotating spiral patterns that respond to music'
-   }
-   ```
-4. **Save and refresh**: Your new visualizer will appear in the dropdown!
-
-## Creating a Visualizer in More Detail
-Provide a copy of `vizwiz.txt` to an AI, along with a description of the effects and features you want your visualizer to have, including any user settings you would like to be made available. Or, write your own using the same information.
-
-For the best results ask your AI to use different colours from the example provided, and to be creative with your idea. Report any errors back to your AI for correcting - if necessary offer other visualizer examples from this distribution as further guidance.
-
-#### Dynamic Loading Benefits
-- **No HTML editing** required
-- **Automatic discovery** of new visualizers
-- **Metadata support** (author, description)
-- **Error handling** for missing files
-- **Development utilities** for easy addition
 
 ### Project Structure
 ```
@@ -187,6 +173,27 @@ vizwiz/
 - 🎯 Target/radar displays
 - 🕸️ Network/web patterns
 
+## 🆕 What's New in v1.3
+
+### Professional Playlist Management
+- **Live Search** - Instantly filter through thousands of tracks as you type
+- **Smart Shuffle** - Randomize playlist while keeping current track at the top
+- **Auto-Scroll** - Current track automatically scrolls into view in large playlists
+- **Play Mode Toggle** - Switch between single-track and continuous playback modes
+- **Visualizer Control** - Turn visualizations on/off to manage CPU usage
+
+### Enhanced User Experience
+- **Improved Keyboard Shortcuts** - Modifier keys properly ignored to prevent conflicts
+- **Better UI Feedback** - Cleaner scrollbars and visual polish throughout
+- **Resource Management** - Optional visualizer disable for performance-critical use
+- **Radio DJ Friendly** - Perfect for live broadcasting and music curation
+
+### Quality of Life Improvements
+- **Long Name Support** - Hover over truncated track names to see full titles
+- **Centered Controls** - Cleaner layout for playlist management controls
+- **Z-index Fixes** - Panels now properly layer and close buttons always work
+- **Search Highlighting** - Matched text highlighted in search results
+
 ## 🆕 What's New in v1.2
 
 ### Enhanced Playlist Controls
@@ -203,12 +210,6 @@ vizwiz/
 - **Real-time Processing** - Instant response to system audio with high-quality 48kHz capture
 - **Browser Integration** - Uses native `getDisplayMedia` API for seamless audio capture
 
-### New Particle Storm Visualizer
-- **Physics Simulation** - Gravity, friction, and realistic particle movement
-- **Frequency-based Spawning** - Bass from bottom, mids from sides, treble from top
-- **Dynamic Connections** - Lines drawn between nearby particles
-- **5 Color Schemes** - Multiple visual themes with smooth transitions
-
 ### Enhanced Core System
 - **Performance Monitoring** - Real-time FPS and render time tracking
 - **Keyboard Shortcuts** - Complete keyboard control system
@@ -216,18 +217,24 @@ vizwiz/
 - **Settings Memory** - Visualizer settings persist between switches
 - **Help System** - Built-in keyboard shortcut reference
 
-### Enhanced Playlist & Audio Control
-- **Smart Crossfade** - Always-on crossfade with 0-20 second range (0 = instant switching)
-- **One-Click Shuffle** - Simple shuffle button for instant playlist randomization
-- **Multi-Track Support** - Load multiple files and navigate with previous/next controls
-- **Repeat Modes** - Off, single track, or entire playlist repeat options
+## 🎯 Use Cases
 
-### Quality of Life Improvements
-- **Trail Effects** - Configurable fade intensity for particle trails
-- **Debug Mode** - Real-time audio level monitoring
-- **Error Handling** - Better user guidance for system audio capture
-- **UI Polish** - Improved animations and visual feedback
-- **Clean Controls** - Streamlined playlist panel with better icons and layout
+### For Everyone
+- **Personal Music Collections** - Visualize your own music library with style
+- **Streaming Visualization** - Add visual flair to Spotify, YouTube, or any audio
+- **Parties & Events** - Create atmosphere with reactive visual displays
+- **Relaxation** - Soothing visuals that respond to ambient music
+
+### For Professionals
+- **Radio Broadcasting** - Search large music libraries and control playback precisely
+- **Live Events** - Visual backdrop that responds to live audio
+- **Presentations** - Add visual interest to audio content
+- **Content Creation** - Screen record visualizations for videos or streams
+
+### For Developers
+- **Learning Resource** - Study audio visualization and canvas techniques
+- **Customization** - Create your own visualizers with AI assistance
+- **Open Source** - Fork and extend with your own features
 
 ## 📜 License
 
@@ -235,5 +242,5 @@ This project is licensed under the MIT License
 
 ## 🚀 Quick Links
 - 📖 [Visualizer Development Guide](vizwiz.txt)
-- 🐛 [Report Issues](https://github.com/RobinNixon/vizwiz/issues)
+- 🛠 [Report Issues](https://github.com/RobinNixon/vizwiz/issues)
 - 💡 [Feature Requests](https://github.com/RobinNixon/vizwiz/discussions)
