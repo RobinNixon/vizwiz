@@ -86,7 +86,6 @@ body {
     border-radius: 50%;
     font-size: 18px;
     justify-content: center;
-    margin-left: 15px;
 }
 
 #repeatBtn.active {
@@ -174,7 +173,7 @@ body {
     transform: translate(-50%, -50%);
     text-align: center;
     z-index: 10;
-    pointer-events: none;
+    pointer-events: auto;
     transition: opacity 0.3s ease;
 }
 
@@ -382,21 +381,17 @@ body {
 /* Help Panel Styles */
 #helpPanel {
     position: fixed;
-    top: 0;
+    top: 75px;
     right: 0;
-    width: 350px;
+    width: 320px;
     height: 100vh;
     background: rgba(0, 0, 0, 0.95);
     backdrop-filter: blur(10px);
     border-left: 1px solid rgba(255, 255, 255, 0.1);
-    z-index: 250;
-    transform: translateX(100%);
-    transition: transform 0.3s ease;
+    z-index: 350;
     overflow-y: auto;
-}
-
-#helpPanel:not(.hidden) {
-    transform: translateX(0);
+    min-height: 100vh;
+    max-height: 100vh;
 }
 
 .help-header {
@@ -405,6 +400,7 @@ body {
     align-items: center;
     padding: 20px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    height: 55px;
 }
 
 .help-header h3 {
@@ -450,7 +446,8 @@ body {
 .settings-footer {
     display: flex;
     gap: 10px;
-    padding: 20px;
+    justify-content: space-between;
+    align-items: center;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
     margin-top: 20px;
 }
@@ -533,7 +530,7 @@ st Panel Styles */
     z-index: 200;
     transform: translateX(-100%);
     transition: transform 0.3s ease;
-    overflow-y: auto;
+    overflow-y: hidden;
 }
 
 #playlistPanel:not(.hidden) {
@@ -559,7 +556,19 @@ st Panel Styles */
 }
 
 .playlist-content {
+    font-size: 14px;
     padding: 20px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+.playlist-content::-webkit-scrollbar {
+    width: 4px;
+}
+
+.playlist-content::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 2px;
 }
 
 .playlist-item {
@@ -600,6 +609,10 @@ st Panel Styles */
     overflow: hidden;
     text-overflow: ellipsis;
     margin-bottom: 4px;
+}
+
+.playlist-item-title:hover {
+    white-space: wrap;
 }
 
 .playlist-item-details {
@@ -670,4 +683,131 @@ st Panel Styles */
 
 #prevBtn:disabled, #nextBtn:disabled {
     opacity: 0.3;
+}
+
+/* Add these styles to your vizwiz.css */
+
+/* Playlist top controls styling */
+.playlist-top-controls {
+  padding: 15px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.playlist-control-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 15px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.playlist-search-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Search input styling */
+#playlistSearch {
+  flex: 1;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+#playlistSearch::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+#playlistSearch:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 5px rgba(99, 102, 241, 0.3);
+}
+
+/* Compact button styling for playlist controls */
+.playlist-top-controls .btn {
+  padding: 6px 12px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+/* Crossfade control styling */
+.playlist-control-row label {
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.8);
+  white-space: nowrap;
+}
+
+.playlist-control-row input[type="range"] {
+  margin-left: 10px;
+  width: 100px;
+}
+
+/* Search result highlighting */
+mark {
+  background: rgba(255, 255, 0, 0.3) !important;
+  color: inherit !important;
+  padding: 0;
+  border-radius: 2px;
+}
+
+/* Updated playlist content to account for top controls */
+.playlist-content {
+  height: calc(100% - 130px); /* Adjusted for header + top controls */
+  overflow-y: auto;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .playlist-control-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .playlist-search-row {
+    flex-direction: column;
+  }
+  
+  .playlist-control-row label {
+    justify-content: space-between;
+  }
+}
+
+#playModeBtn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    font-size: 18px;
+    justify-content: center;
+}
+
+#playModeBtn.single-mode {
+    color: #ff6b35 !important;
+    background: rgba(255, 107, 53, 0.2) !important;
+}
+
+#crossfadeSlider:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.checkbox-label input:disabled + span {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+#visualizerSelect:disabled,
+#settingsBtn:disabled,
+#randomCheckbox:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }

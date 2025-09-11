@@ -8,7 +8,10 @@ class VizWiz {
     this.analyser = null;
     this.mediaStream = null;
     this.isCapturing = false;
-    
+    this.playMode = 'continuous';
+    this.savedCrossfadeDuration = undefined;
+    this.visualizerEnabled = true;
+
     // Multi-file support
     this.playlist = [];
 
@@ -45,6 +48,10 @@ class VizWiz {
     this.randomMode = false;
     this.lastRandomSwitch = 0; // Store timestamp of last switch
     this.nextRandomInterval = this.getRandomInterval(); // Get initial interval
+
+    // Search functionality
+    this.searchTerm = '';
+    this.filteredPlaylist = [];
   }
   
   async init() {
@@ -96,7 +103,10 @@ class VizWiz {
       trackDetails: document.getElementById('trackDetails'),
       trackInfo: document.getElementById('trackInfo'),
       settingsPanel: document.getElementById('settingsPanel'),
-      closeSettingsBtn: document.getElementById('closeSettingsBtn')
+      closeSettingsBtn: document.getElementById('closeSettingsBtn'),
+      playModeBtn: document.getElementById('playModeBtn'),
+      playModeIcon: document.getElementById('playModeIcon'),
+      visualizerToggle: document.getElementById('visualizerToggle')
     };
     
     this.canvas = document.getElementById('visualizerCanvas');
@@ -200,6 +210,10 @@ class VizWiz {
       }
     });
     
+    this.elements.playModeBtn.addEventListener('click', () => {
+      this.togglePlayMode();
+    });
+
     this.elements.playlistBtn.addEventListener('click', () => {
       this.togglePlaylistPanel();
     });
@@ -291,7 +305,39 @@ class VizWiz {
     const crossfadeSlider = document.getElementById('crossfadeSlider');
     const crossfadeDurationSpan = document.getElementById('crossfadeDuration');
     const shuffleBtn = document.getElementById('shuffleBtn');
+    const playlistSearch = document.getElementById('playlistSearch');
+    const visualizerToggle = document.getElementById('visualizerToggle');
+
+    if (visualizerToggle) {
+        visualizerToggle.addEventListener('change', (e) => {
+            console.log('Visualizer toggle clicked:', e.target.checked);
+            this.toggleVisualizer(e.target.checked);
+        });
+        console.log('Visualizer toggle listener attached');
+    } else {
+        console.error('visualizerToggle element not found');
+    }
+
+    // Search functionality
+    if (playlistSearch) {
+      playlistSearch.addEventListener('input', (e) => {
+        this.searchTerm = e.target.value.toLowerCase();
+        this.filterAndUpdatePlaylist();
+      });
+      
+      playlistSearch.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          this.jumpToFirstSearchResult();
+        }
+      });
+    }
     
+    if (clearSearchBtn) {
+      clearSearchBtn.addEventListener('click', () => {
+        this.clearSearch();
+      });
+    }
+  
     if (closePlaylistBtn) {
       closePlaylistBtn.addEventListener('click', () => {
         this.hidePlaylistPanel();
@@ -336,6 +382,200 @@ class VizWiz {
     });
   }
   
+  toggleVisualizer(enabled) {
+      console.log('toggleVisualizer called with:', enabled);
+      this.visualizerEnabled = enabled;
+      
+      try {
+          if (!enabled) {
+              // Stop current visualization
+              if (this.currentVisualizer && this.currentVisualizer.stopVisualization) {
+                  this.currentVisualizer.stopVisualization();
+              }
+              
+              // Clear canvas to black
+              if (this.ctx && this.canvas) {
+                  this.ctx.fillStyle = '#000000';
+                  this.ctx.fillRect(0, 0, this.canvas.width / devicePixelRatio, this.canvas.height / devicePixelRatio);
+              }
+              
+              // Disable visualizer controls
+              if (this.elements.visualizerSelect) this.elements.visualizerSelect.disabled = true;
+              if (this.elements.settingsBtn) this.elements.settingsBtn.disabled = true;
+              if (this.elements.randomCheckbox) this.elements.randomCheckbox.disabled = true;
+              
+          } else {
+              // Re-enable visualizer controls
+              if (this.elements.visualizerSelect) this.elements.visualizerSelect.disabled = false;
+              if (this.elements.settingsBtn) this.elements.settingsBtn.disabled = false;
+              if (this.elements.randomCheckbox) this.elements.randomCheckbox.disabled = false;
+              
+              // Restart visualization if audio is playing
+              if (this.isPlaying && this.currentVisualizer && this.currentVisualizer.startVisualization) {
+                  this.currentVisualizer.startVisualization(this.analyser, this.dataArray, this.ctx, this.canvas);
+              }
+          }
+          
+          console.log('Visualizer:', enabled ? 'ON' : 'OFF');
+      } catch (error) {
+          console.error('Error in toggleVisualizer:', error);
+      }
+  }
+
+  togglePlayMode() {
+      if (this.playMode === 'continuous') {
+          this.playMode = 'single';
+          this.elements.playModeIcon.textContent = '⏹️';
+          this.elements.playModeBtn.classList.add('single-mode');
+          this.elements.playModeBtn.title = 'Play Mode: Single Track';
+          
+          // Store current crossfade duration and set to 0
+          this.savedCrossfadeDuration = this.crossfadeDuration;
+          this.crossfadeDuration = 0;
+          
+          // Update UI
+          const crossfadeSlider = document.getElementById('crossfadeSlider');
+          const crossfadeDurationSpan = document.getElementById('crossfadeDuration');
+          if (crossfadeSlider && crossfadeDurationSpan) {
+              crossfadeSlider.value = 0;
+              crossfadeDurationSpan.textContent = '0';
+              crossfadeSlider.disabled = true; // Disable slider in single mode
+          }
+          
+      } else {
+          this.playMode = 'continuous';
+          this.elements.playModeIcon.textContent = '🔄';
+          this.elements.playModeBtn.classList.remove('single-mode');
+          this.elements.playModeBtn.title = 'Play Mode: Continuous';
+          
+          // Restore previous crossfade duration
+          if (this.savedCrossfadeDuration !== undefined) {
+              this.crossfadeDuration = this.savedCrossfadeDuration;
+          } else {
+              this.crossfadeDuration = 10000; // Default fallback
+          }
+          
+          // Update UI
+          const crossfadeSlider = document.getElementById('crossfadeSlider');
+          const crossfadeDurationSpan = document.getElementById('crossfadeDuration');
+          if (crossfadeSlider && crossfadeDurationSpan) {
+              const seconds = this.crossfadeDuration / 1000;
+              crossfadeSlider.value = seconds;
+              crossfadeDurationSpan.textContent = seconds;
+              crossfadeSlider.disabled = false; // Re-enable slider
+          }
+      }
+      console.log('Play mode:', this.playMode, 'Crossfade:', this.crossfadeDuration / 1000 + 's');
+  }
+
+  filterAndUpdatePlaylist() {
+    if (!this.searchTerm) {
+      // No search term, show all tracks
+      this.filteredPlaylist = this.playlist.map((track, index) => ({...track, originalIndex: index}));
+    } else {
+      // Filter tracks based on search term
+      this.filteredPlaylist = this.playlist
+        .map((track, index) => ({...track, originalIndex: index}))
+        .filter(track => 
+          track.title.toLowerCase().includes(this.searchTerm) ||
+          track.file.name.toLowerCase().includes(this.searchTerm)
+        );
+    }
+    
+    this.updateFilteredPlaylistUI();
+  }
+
+  updateFilteredPlaylistUI() {
+    const container = document.getElementById('playlistItems');
+    const countSpan = document.getElementById('playlistCount');
+    
+    if (!container || !countSpan) return;
+    
+    const totalCount = this.playlist.length;
+    const filteredCount = this.filteredPlaylist.length;
+    
+    // Update count display
+    if (this.searchTerm) {
+      countSpan.textContent = `${filteredCount} / ${totalCount}`;
+    } else {
+      countSpan.textContent = totalCount;
+    }
+    
+    // Use DocumentFragment for better performance
+    const fragment = document.createDocumentFragment();
+    let currentTrackElement = null;
+    
+    this.filteredPlaylist.forEach((track, displayIndex) => {
+      const item = document.createElement('div');
+      item.className = 'playlist-item';
+      item.dataset.trackIndex = track.originalIndex;
+      
+      if (track.originalIndex === this.currentTrackIndex) {
+        item.classList.add('current');
+        if (this.isPlaying) {
+          item.classList.add('playing');
+        }
+        currentTrackElement = item;
+      }
+      
+      // Highlight search terms in the display
+      let displayTitle = track.title;
+      if (this.searchTerm) {
+        const regex = new RegExp(`(${this.searchTerm})`, 'gi');
+        displayTitle = track.title.replace(regex, '<mark style="background: rgba(255,255,0,0.3); color: inherit;">$1</mark>');
+      }
+      
+      item.innerHTML = `
+        <div class="playlist-item-info">
+          <div class="playlist-item-title">${displayTitle}</div>
+        <div class="playlist-item-details">Track ${track.originalIndex + 1} of ${totalCount}</div>
+        </div>
+        <div class="playlist-item-controls">
+          <button class="playlist-item-btn" onclick="window.vizwiz.loadTrackFromPlaylist(${track.originalIndex}, true)" title="Play">▶️</button>
+          <button class="playlist-item-btn" onclick="window.vizwiz.removeFromPlaylist(${track.originalIndex})" title="Remove">🗑️</button>
+        </div>
+      `;
+      
+      fragment.appendChild(item);
+    });
+    
+    // Clear and append all at once
+    container.innerHTML = '';
+    container.appendChild(fragment);
+    
+    // Auto-scroll to current track if it's visible in filtered results
+    if (currentTrackElement) {
+      setTimeout(() => {
+        this.scrollToCurrentTrack(currentTrackElement);
+      }, 100);
+    }
+  }
+
+  jumpToFirstSearchResult() {
+    if (this.filteredPlaylist.length > 0) {
+      const firstResult = this.filteredPlaylist[0];
+      this.loadTrackFromPlaylist(firstResult.originalIndex, false); // Don't auto-play
+      this.scrollToCurrentTrack();
+    }
+  }
+
+  clearSearch() {
+    const searchInput = document.getElementById('playlistSearch');
+    if (searchInput) {
+      searchInput.value = '';
+      this.searchTerm = '';
+      this.filterAndUpdatePlaylist();
+    }
+  }
+
+  jumpToCurrentTrack() {
+    // Clear search if active and show current track
+    this.clearSearch();
+    setTimeout(() => {
+      this.scrollToCurrentTrack();
+    }, 100);
+  }
+
   setupDragAndDrop() {
     const container = document.getElementById('visualizerContainer');
     
@@ -820,6 +1060,7 @@ class VizWiz {
       this.elements.visualizerSelect.disabled = false;
       this.elements.settingsBtn.disabled = false;
       this.elements.fullscreenBtn.disabled = false;
+      this.elements.playModeBtn.disabled = false;
       
       // Enable playlist controls if we have a playlist
       if (this.playlist.length > 0) {
@@ -926,8 +1167,8 @@ class VizWiz {
           // Show track title temporarily when starting playback
           this.showTrackTitleTemporarily();
           
-          if (this.currentVisualizer && this.currentVisualizer.startVisualization) {
-            this.currentVisualizer.startVisualization(this.analyser, this.dataArray, this.ctx, this.canvas);
+          if (this.visualizerEnabled && this.currentVisualizer && this.currentVisualizer.startVisualization) {
+              this.currentVisualizer.startVisualization(this.analyser, this.dataArray, this.ctx, this.canvas);
           }
           
           // Reset random timer when starting playback
@@ -954,8 +1195,8 @@ class VizWiz {
           // Show track title temporarily when starting playback
           this.showTrackTitleTemporarily();
           
-          if (this.currentVisualizer && this.currentVisualizer.startVisualization) {
-            this.currentVisualizer.startVisualization(this.analyser, this.dataArray, this.ctx, this.canvas);
+          if (this.visualizerEnabled && this.currentVisualizer && this.currentVisualizer.startVisualization) {
+              this.currentVisualizer.startVisualization(this.analyser, this.dataArray, this.ctx, this.canvas);
           }
           
           // Track performance for the new visualizer
@@ -988,7 +1229,7 @@ class VizWiz {
       // Check if we're at the very end for instant switching
       const timeRemaining = this.audioElement.duration - this.audioElement.currentTime;
       if (timeRemaining <= 0.1) {
-        this.playNext();
+        this.nextTrack();
       }
       return;
     }
@@ -1019,26 +1260,36 @@ class VizWiz {
   }
   
   onTrackEnded() {
-    if (this.crossfadeInProgress) {
-      // Crossfade is already in progress, let it complete naturally
-      // console.log('Track ended during crossfade - letting crossfade complete');
-      return;
-    } else if (this.playlist.length > 1) {
-      // Multiple tracks - advance to next (handles repeat modes in nextTrack)
-      this.nextTrack(); // Automatic track change, allow crossfade
-    } else if (this.playlist.length === 1 && this.repeatMode === 'one') {
-      // Single track with repeat - restart current track
-      this.audioElement.currentTime = 0;
-      this.audioElement.play();
-    } else {
-      // End of playback
-      this.isPlaying = false;
-      this.elements.playIcon.textContent = '▶️';
-      if (this.currentVisualizer && this.currentVisualizer.stopVisualization) {
-        this.currentVisualizer.stopVisualization();
+      if (this.crossfadeInProgress) {
+          return;
+      } 
+      
+      // Check play mode first
+      if (this.playMode === 'single') {
+          // Single mode - stop after current track
+          this.isPlaying = false;
+          this.elements.playIcon.textContent = '▶️';
+          if (this.currentVisualizer && this.currentVisualizer.stopVisualization) {
+              this.currentVisualizer.stopVisualization();
+          }
+          this.elements.progressBar.value = 0;
+          return;
       }
-      this.elements.progressBar.value = 0;
-    }
+      
+      // Continuous mode - existing behavior
+      if (this.playlist.length > 1) {
+          this.nextTrack();
+      } else if (this.playlist.length === 1 && this.repeatMode === 'one') {
+          this.audioElement.currentTime = 0;
+          this.audioElement.play();
+      } else {
+          this.isPlaying = false;
+          this.elements.playIcon.textContent = '▶️';
+          if (this.currentVisualizer && this.currentVisualizer.stopVisualization) {
+              this.currentVisualizer.stopVisualization();
+          }
+          this.elements.progressBar.value = 0;
+      }
   }
   
   toggleRepeatMode() {
@@ -1133,7 +1384,10 @@ class VizWiz {
   handleKeyboardShortcuts(e) {
     // Don't trigger shortcuts if user is typing in an input
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
-    
+
+    // Ignore shortcuts when modifier keys are pressed (except Ctrl+P for performance monitor)
+    if (e.shiftKey || e.altKey || (e.ctrlKey && e.code !== 'KeyP') || e.metaKey) return;    
+
     switch (e.code) {
       case 'Space':
         e.preventDefault();
@@ -1178,7 +1432,7 @@ class VizWiz {
           this.togglePerformanceMonitor();
         }
         break;
-      case 'KeyC':
+      case 'KeyA':
         e.preventDefault();
         this.toggleSystemAudioCapture();
         break;
@@ -1385,18 +1639,20 @@ class VizWiz {
     // Get current track
     const currentTrack = this.playlist[this.currentTrackIndex];
     
-    // Shuffle the playlist using Fisher-Yates algorithm
-    const shuffled = [...this.playlist];
-    for (let i = shuffled.length - 1; i > 0; i--) {
+    // Create array of all OTHER tracks (excluding current)
+    const otherTracks = this.playlist.filter((track, index) => index !== this.currentTrackIndex);
+    
+    // Shuffle only the other tracks using Fisher-Yates algorithm
+    for (let i = otherTracks.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
-      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      [otherTracks[i], otherTracks[j]] = [otherTracks[j], otherTracks[i]];
     }
     
-    // Find where the current track ended up
-    this.currentTrackIndex = shuffled.findIndex(track => track === currentTrack);
-    this.playlist = shuffled;
+    // Reconstruct playlist with current track at position 0
+    this.playlist = [currentTrack, ...otherTracks];
+    this.currentTrackIndex = 0;
     
-    // console.log(`Shuffled playlist, current track now at index ${this.currentTrackIndex}`);
+    console.log(`Shuffled playlist, current track moved to position 0`);
     this.updatePlaylistUI();
   }
   
@@ -1730,7 +1986,16 @@ class VizWiz {
     
     if (!container || !countSpan) return;
     
-    countSpan.textContent = this.playlist.length;
+    // Determine which playlist to display (filtered or full)
+    const displayPlaylist = this.searchTerm ? this.filteredPlaylist : 
+      this.playlist.map((track, index) => ({...track, originalIndex: index}));
+    
+    // Update count display
+    if (this.searchTerm) {
+      countSpan.textContent = `${displayPlaylist.length} / ${this.playlist.length}`;
+    } else {
+      countSpan.textContent = this.playlist.length;
+    }
     
     // For very large playlists (>1000 tracks), consider virtual scrolling
     // But for now, let's optimize the DOM manipulation
@@ -1739,12 +2004,13 @@ class VizWiz {
     const fragment = document.createDocumentFragment();
     let currentTrackElement = null;
     
-    this.playlist.forEach((track, index) => {
+    displayPlaylist.forEach((track, displayIndex) => {
       const item = document.createElement('div');
       item.className = 'playlist-item';
-      item.dataset.trackIndex = index;
+      const actualIndex = this.searchTerm ? track.originalIndex : displayIndex;
+      item.dataset.trackIndex = actualIndex;
       
-      if (index === this.currentTrackIndex) {
+      if (actualIndex === this.currentTrackIndex) {
         item.classList.add('current');
         if (this.isPlaying) {
           item.classList.add('playing');
@@ -1752,14 +2018,21 @@ class VizWiz {
         currentTrackElement = item;
       }
       
+      // Highlight search terms in the display
+      let displayTitle = track.title;
+      if (this.searchTerm) {
+        const regex = new RegExp(`(${this.searchTerm})`, 'gi');
+        displayTitle = track.title.replace(regex, '<mark style="background: rgba(255,255,0,0.3); color: inherit;">$1</mark>');
+      }
+      
       item.innerHTML = `
         <div class="playlist-item-info">
-          <div class="playlist-item-title">${track.title}</div>
-          <div class="playlist-item-details">Track ${index + 1}</div>
+          <div class="playlist-item-title">${displayTitle}</div>
+          <div class="playlist-item-details">Track ${actualIndex + 1} of ${this.playlist.length}</div>
         </div>
         <div class="playlist-item-controls">
-          <button class="playlist-item-btn" onclick="window.vizwiz.loadTrackFromPlaylist(${index}, true)" title="Play">▶️</button>
-          <button class="playlist-item-btn" onclick="window.vizwiz.removeFromPlaylist(${index})" title="Remove">🗑️</button>
+          <button class="playlist-item-btn" onclick="window.vizwiz.loadTrackFromPlaylist(${actualIndex}, true)" title="Play">▶️</button>
+          <button class="playlist-item-btn" onclick="window.vizwiz.removeFromPlaylist(${actualIndex})" title="Remove">🗑️</button>
         </div>
       `;
       
@@ -1851,7 +2124,7 @@ class VizWiz {
           <div style='font-size:.65em; color:#0df'>VizWiz &copy; 2025 Robin Nixon</div>
           Load/drop music file or capture audio to begin
         `;
-        this.elements.trackDetails.textContent = 'Drag & drop, click "Load Music", or capture system audio';
+        this.elements.trackDetails.textContent = 'Drag & drop, Load Music, or Audio Grab';
       } else {
         // Load next track or first if at end
         const newIndex = Math.min(this.currentTrackIndex, this.playlist.length - 1);
@@ -1969,7 +2242,7 @@ class VizWiz {
       console.error('Failed to start system audio capture:', error);
       
       // Reset button state
-      this.elements.captureBtn.innerHTML = '<span>🎵</span> Capture System Audio';
+      this.elements.captureBtn.innerHTML = '<span>🎵</span> Audio Grab';
       this.elements.captureBtn.disabled = false;
       
       let errorMessage = 'Failed to capture system audio.\n\n';
@@ -2019,7 +2292,7 @@ class VizWiz {
       </div>
       Load/drop music file or capture audio to begin
     `;
-    this.elements.trackDetails.textContent = 'Drag & drop, click "Load Music", or capture system audio';
+    this.elements.trackDetails.textContent = 'Drag & drop, Load Music, or Audio Grab';
     
     // Disable some controls
     this.elements.playBtn.disabled = true;

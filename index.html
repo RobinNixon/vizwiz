@@ -1,139 +1,144 @@
 <!DOCTYPE html>
 <html lang="en">
-
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>VizWiz 1.0</title>
-  <link rel="stylesheet" href="vizwiz.css">
-  <link rel="icon" type="image/ico" href="vizwiz.png">
-</head>
-
-<body>
-  <div id="app">
-    <header id="controls">
-      <div class="control-group">
-        <button id="fileBtn" class="btn primary">
-          <span>📁</span> Load Music
-        </button>
-        <button id="playlistBtn" class="btn" title="Toggle playlist panel">
-          <span>📋</span> Playlist
-        </button>
-        <button id="captureBtn" class="btn" title="Capture audio from any app (Spotify, YouTube, games, etc.)">
-          <span>🎵</span> Capture Audio
-        </button>
-        <input type="file" id="fileInput" accept="audio/*" multiple style="display: none;">
-      </div>
-      <div class="control-group player-controls">
-        <button id="playBtn" class="btn" disabled>
-          <span id="playIcon">▶️</span>
-        </button>
-        <div class="progress-container">
-          <input type="range" id="progressBar" min="0" max="100" value="0" disabled>
-          <div class="time-display">
-            <span id="currentTime">0:00</span> / <span id="duration">0:00</span>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VizWiz 1.0</title>
+    <link rel="stylesheet" href="vizwiz.css">
+    <link rel="icon" type="image/ico" href="vizwiz.png">
+  </head>
+  <body>
+    <div id="app">
+      <header id="controls">
+        <div class="control-group">
+          <button id="fileBtn" class="btn primary" title='Load File(s) or Playlist'>
+            <span>📁</span> Load Music
+          </button>
+          <button id="playlistBtn" class="btn" title="Load files(s) or playlist then Toggle Playlist Panel">
+            <span>📋</span> Playlist
+          </button>
+          <button id="captureBtn" class="btn" title="Capture Audio From Any System Source">
+            <span>🎵</span> Audio Grab
+          </button>
+          <input type="file" id="fileInput" accept="audio/*" multiple style="display: none;">
+        </div>
+        <div class="control-group player-controls">
+          <button id="playBtn" class="btn" disabled title='Play/Pause'>
+            <span id="playIcon">▶️</span>
+          </button>
+          <button id="playModeBtn" class="btn" disabled title="Play Mode: Continuous">
+            <span id="playModeIcon">🔄</span>
+          </button>
+          <div class="progress-container">
+            <input type="range" id="progressBar" min="0" max="100" value="0" disabled>
+            <div class="time-display">
+              <span id="currentTime">0:00</span> / <span id="duration">0:00</span>
+            </div>
+          </div>
+          <button id="prevBtn" class="btn" disabled title="Previous Track">
+            <span>⏮️</span>
+          </button>
+          <button id="nextBtn" class="btn" disabled title="Next Track">
+            <span>⏭️</span>
+          </button>
+          <button id="repeatBtn" class="btn" disabled title="Repeat Off">
+            <span id="repeatIcon">↩️</span>
+          </button>
+        </div>
+        <div class="control-group">
+          <div class="volume-control">
+            <span>🔊</span>
+            <input type="range" id="volumeSlider" min="0" max="100" value="80">
+          </div>
+          <select id="visualizerSelect">
+          </select>
+          <label for="randomCheckbox" class="checkbox-label" title='Randomize Visualizations'>
+            <input type="checkbox" id="randomCheckbox">
+            <span>Rand</span>
+          </label>
+          <button id="fullscreenBtn" class="btn" disabled title="Full Screen">
+            <span>⛶</span>
+          </button>
+          <button id="settingsBtn" class="btn" disabled title="Settings">
+            <span>⚙️</span>
+          </button>
+        </div>
+      </header>
+      <div id="visualizerContainer">
+        <canvas id="visualizerCanvas"></canvas>
+        <div id="trackInfo">
+          <h2 id="trackTitle">
+            <div style='font-size:.65em; color:#0df'>
+              VizWiz &copy; 2025 Robin Nixon
+            </div>
+            Play Your Music and Groove!
+          </h2>
+          <p id="trackDetails">Drag &amp; drop, Load Music, or Audio Grab to Begin</p>
+        </div>
+        <div id="playlistPanel" class="hidden">
+          <div class="playlist-header">
+            <h3>Playlist (<span id="playlistCount">0</span> tracks)</h3>
+            <button id="closePlaylistBtn" class="btn-close">✕</button>
+          </div>
+          <div class="playlist-top-controls">
+            <div class="playlist-control-row">
+              <label>
+                Crossfade (<span id="crossfadeDuration">10</span>s)
+                <input type="range" id="crossfadeSlider" min="0" max="20" value="10" style="width: 100px; margin-left: 10px;">
+              </label><br>
+              <button id="shuffleBtn" class="btn">
+                🔀 Shuffle
+              </button>
+              <label for="visualizerToggle" class="checkbox-label" style="margin-left: 5px;">
+                <input type="checkbox" id="visualizerToggle" checked>&nbsp;
+                <span>Visualizer</span>
+              </label>
+            </div>
+            <div class="playlist-search-row">
+              <input type="text" id="playlistSearch" placeholder="Search tracks..." style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: white; margin-right: 10px;">
+              <button id="clearSearchBtn" class="btn" style="padding: 8px 12px;">Clear</button>
+            </div>
+          </div>
+          <div class="playlist-content">
+            <div id="playlistItems"></div>
           </div>
         </div>
-        <button id="prevBtn" class="btn" disabled title="Previous Track">
-          <span>⏮️</span>
-        </button>
-        <button id="nextBtn" class="btn" disabled title="Next Track">
-          <span>⏭️</span>
-        </button>
-        <button id="repeatBtn" class="btn" disabled title="Repeat Off">
-          <span id="repeatIcon">↩️</span>
-        </button>
       </div>
-      <div class="control-group">
-        <div class="volume-control">
-          <span>🔊</span>
-          <input type="range" id="volumeSlider" min="0" max="100" value="80">
+      <div id="settingsPanel" class="hidden">
+        <div class="settings-header">
+          <h3>Visualizer Settings</h3>
+          <button id="closeSettingsBtn" class="btn-close">✕</button>
         </div>
-        <select id="visualizerSelect">
-        </select>
-        <label for="randomCheckbox" class="checkbox-label">
-          <input type="checkbox" id="randomCheckbox">
-          <span>Random</span>
-        </label>
-        <button id="fullscreenBtn" class="btn" disabled>
-          <span>⛶</span>
-        </button>
-        <button id="settingsBtn" class="btn" disabled>
-          <span>⚙️</span>
-        </button>
-      </div>
-    </header>
-    <div id="visualizerContainer">
-      <canvas id="visualizerCanvas"></canvas>
-      <div id="trackInfo">
-        <h2 id="trackTitle">
-          <div style='font-size:.65em; color:#0df'>
-            VizWiz &copy; 2025 Robin Nixon
+        <div class="settings-content">
+          <div id="visualizerSettings"></div>
+          <div class="settings-footer">
+            <button id="resetSettings" class="btn">Reset Defaults</button>
+            <button id="helpBtn" class="btn">Keyboard Shortcuts</button>
           </div>
-          Load/drop music file or capture audio to begin
-        </h2>
-        <p id="trackDetails">Drag &amp; drop, click "Load Music", or capture system audio</p>
-      </div>
-      <div id="playlistPanel" class="hidden">
-        <div class="playlist-header">
-          <h3>Playlist (<span id="playlistCount">0</span> tracks)</h3>
-          <button id="closePlaylistBtn" class="btn-close">✕</button>
         </div>
-        <div class="playlist-content">
-          <div id="playlistItems"></div>
-          <div class="playlist-controls">
-            <label>
-              Crossfade (<span id="crossfadeDuration">10</span>s)
-              <input type="range" id="crossfadeSlider" min="0" max="20" value="10"
-                style="width: 100px; margin-left: 10px;">
-            </label>
-            <button id="shuffleBtn" class="btn" style="margin-top: 10px; margin-left: 30px;">
-              🔀 Shuffle Playlist
-            </button>
+      </div>
+      <div id="helpPanel" class="hidden">
+        <div class="help-header">
+          <h3>Keyboard Shortcuts</h3>
+          <button id="closeHelpBtn" class="btn-close">✕</button>
+        </div>
+        <div class="help-content">
+          <div class="shortcut-list">
+            <div class="shortcut-item"><kbd>Space</kbd> Play/Pause</div>
+            <div class="shortcut-item"><kbd>A</kbd> Audio Capture</div>
+            <div class="shortcut-item"><kbd>F</kbd> Fullscreen</div>
+            <div class="shortcut-item"><kbd>M</kbd> Mutation Mode</div>
+            <div class="shortcut-item"><kbd>R</kbd> Random Mode</div>
+            <div class="shortcut-item"><kbd>S</kbd> Settings</div>
+            <div class="shortcut-item"><kbd>←</kbd> Previous Visualizer</div>
+            <div class="shortcut-item"><kbd>→</kbd> Next Visualizer</div>
+            <div class="shortcut-item"><kbd>Ctrl+P</kbd> Performance Monitor</div>
           </div>
         </div>
       </div>
     </div>
-    <div id="settingsPanel" class="hidden">
-      <div class="settings-header">
-        <h3>Visualizer Settings</h3>
-        <button id="closeSettingsBtn" class="btn-close">✕</button>
-      </div>
-      <div class="settings-content">
-        <div id="visualizerSettings"></div>
-        <div class="settings-footer">
-          <button id="resetSettings" class="btn">Reset Defaults</button>
-          <button id="helpBtn" class="btn">Keyboard Shortcuts</button>
-        </div>
-      </div>
-    </div>
-    <div id="helpPanel" class="hidden">
-      <div class="help-header">
-        <h3>Keyboard Shortcuts</h3>
-        <button id="closeHelpBtn" class="btn-close">✕</button>
-      </div>
-      <div class="help-content">
-        <div class="shortcut-list">
-          <div class="shortcut-item"><kbd>Space</kbd> Play/Pause</div>
-          <div class="shortcut-item"><kbd>F</kbd> Toggle Fullscreen</div>
-          <div class="shortcut-item"><kbd>S</kbd> Toggle Settings</div>
-          <div class="shortcut-item"><kbd>R</kbd> Toggle Random Mode</div>
-          <div class="shortcut-item"><kbd>M</kbd> Toggle Mutation Mode</div>
-          <div class="shortcut-item"><kbd>←</kbd> Previous Visualizer</div>
-          <div class="shortcut-item"><kbd>→</kbd> Next Visualizer</div>
-          <div class="shortcut-item"><kbd>C</kbd> Toggle System Audio Capture</div>
-          <div class="shortcut-item"><kbd>Ctrl+P</kbd> Performance Monitor</div>
-        </div>
-      </div>
-    </div>
-  </div>
-  <audio id="audioPlayer" preload="auto"></audio>
-  <script src='vizwiz.js'></script>
-
-  <!-- Load visualizer registry (contains list of all visualizers) -->
-  <script src='visualizers/registry.js'></script>
-
-  <!-- Visualizers are now loaded dynamically from the registry -->
-</body>
-
+    <audio id="audioPlayer" preload="auto"></audio>
+    <script src='vizwiz.js'></script>
+    <script src='visualizers/registry.js'></script>
+  </body>
 </html>
