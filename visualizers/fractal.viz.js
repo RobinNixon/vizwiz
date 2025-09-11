@@ -31,7 +31,7 @@ class FractalVisualizer {
     // --- Mutation properties (required by VizWiz) ---
     this.mutationEnabled = false;
     this.mutationTimer = 0;
-    this.mutationInterval = 180; // Frames between mutations
+    this.mutationInterval = 300; // Frames between mutations
 
     // --- Color Schemes ---
     this.colorSchemes = {

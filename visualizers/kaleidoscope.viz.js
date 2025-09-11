@@ -37,7 +37,7 @@ class KaleidoscopeVisualizer {
     // Mutation properties
     this.mutationEnabled = false;
     this.mutationTimer = 0;
-    this.mutationInterval = 180;
+    this.mutationInterval = 300;
     
     // UI elements
     this.elements = null;

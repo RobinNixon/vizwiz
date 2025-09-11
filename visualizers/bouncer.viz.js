@@ -8,7 +8,7 @@ class BigBouncerVisualizer {
     this.elements = null;
     this.mutationEnabled = false;
     this.mutationTimer = 0;
-    this.mutationInterval = 200;
+    this.mutationInterval = 300;
 
     this.shapes = [];
     this.particles = [];

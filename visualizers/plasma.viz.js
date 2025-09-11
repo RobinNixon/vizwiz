@@ -24,7 +24,7 @@ class PlasmaVisualizer {
     // Mutation properties
     this.mutationEnabled = false;
     this.mutationTimer = 0;
-    this.mutationInterval = 200;
+    this.mutationInterval = 300;
     
     // UI elements
     this.elements = null;
@@ -602,7 +602,7 @@ class PlasmaVisualizer {
           label: 'Resolution',
           min: 1,
           max: 8,
-          default: 2,
+          default: 4,
           step: 1,
           unit: 'x'
         },
@@ -611,7 +611,7 @@ class PlasmaVisualizer {
           label: 'Speed',
           min: 0.1,
           max: 3.0,
-          default: 1.0,
+          default: 2.0,
           step: 0.1,
           unit: 'x'
         },
@@ -620,7 +620,7 @@ class PlasmaVisualizer {
           label: 'Turbulence',
           min: 0.1,
           max: 3.0,
-          default: 1.0,
+          default: 1.5,
           step: 0.1,
           unit: 'x'
         },
@@ -708,6 +708,11 @@ class PlasmaVisualizer {
       colorScheme: {
         probability: 0.7,
         values: ['plasma', 'fire', 'ocean', 'arctic', 'sunset', 'galaxy', 'toxic', 'rainbow']
+      },
+      resolution: {
+        probability: 0.4,
+        range: { min: 3, max: 8 },
+        step: 1
       },
       speed: {
         probability: 0.4,

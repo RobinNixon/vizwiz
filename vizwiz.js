@@ -310,12 +310,12 @@ class VizWiz {
 
     if (visualizerToggle) {
         visualizerToggle.addEventListener('change', (e) => {
-            console.log('Visualizer toggle clicked:', e.target.checked);
+            // console.log('Visualizer toggle clicked:', e.target.checked);
             this.toggleVisualizer(e.target.checked);
         });
-        console.log('Visualizer toggle listener attached');
+        // console.log('Visualizer toggle listener attached');
     } else {
-        console.error('visualizerToggle element not found');
+        // console.error('visualizerToggle element not found');
     }
 
     // Search functionality

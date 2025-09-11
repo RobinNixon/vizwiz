@@ -10,18 +10,18 @@ window.VisualizerManifest = [
     description: 'Classic frequency bars with peak dots and smooth animations'
   },
   {
-    id: 'blobs',
-    name: 'Blobby Blobs',
-    file: 'blobs.viz.js',
-    author: 'Deepseek R1',
-    description: 'Organic blob particles that respond to different frequency bands'
-  },
-  {
     id: 'bouncer',
     name: 'Big Bouncer',
     file: 'bouncer.viz.js',
     author: 'Grok 4',
     description: 'Bouncing elements with dynamic physics'
+  },
+  {
+    id: 'blobs',
+    name: 'Blobby Blobs',
+    file: 'blobs.viz.js',
+    author: 'Deepseek R1',
+    description: 'Organic blob particles that respond to different frequency bands'
   },
   {
     id: 'fractal',
@@ -38,11 +38,25 @@ window.VisualizerManifest = [
     description: 'Rhythmic patterns that groove with the beat'
   },
   {
+    id: 'hyper',
+    name: 'Hyper Bloom',
+    file: 'hyper.viz.js',
+    author: 'Copilot',
+    description: 'Folding, rotating, pulsating tesseract'
+  },
+  {
     id: 'kaleidoscope',
     name: 'Kaleidoscope',
     file: 'kaleidoscope.viz.js',
     author: 'Claude Sonnet 4',
     description: 'Symmetrical kaleidoscope patterns with color cycling'
+  },
+  {
+    id: 'nbody',
+    name: 'N-Body Cosmos',
+    file: 'nbody.viz.js',
+    author: 'Grok 4',
+    description: 'N-Body physics simulation'
   },
   {
     id: 'oscilloscope',
@@ -59,24 +73,10 @@ window.VisualizerManifest = [
     description: 'Flowing plasma effects with smooth color transitions'
   },
   {
-    id: 'nbody',
-    name: 'N-Body Cosmos',
-    file: 'nbody.viz.js',
-    author: 'Grok 4',
-    description: 'N-Body physics simulation'
-  },
-  {
     id: 'bloom',
     name: 'Vector Bloom',
     file: 'bloom.viz.js',
     author: 'Copilot',
     description: 'Generative, node-based bloom field that reacts to frequency clusters'
-  },
-  {
-    id: 'hyper',
-    name: 'Hyper Bloom',
-    file: 'hyper.viz.js',
-    author: 'Copilot',
-    description: 'Folding, rotating, pulsating tesseract'
   }
 ];

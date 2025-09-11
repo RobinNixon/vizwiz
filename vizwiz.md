@@ -99,7 +99,7 @@ To support the auto-mutation feature, your settings schema MUST include a `mutat
 ```javascript
 mutateMode: {
   type: 'checkbox',
-  label: 'Auto-Mutate',
+  label: 'Auto Mutate',
   default: false
 }
 ```
