@@ -17,6 +17,7 @@ The global `window.VisualizerRegistry` object serves as the bridge between your 
 - **Registration**: Making your visualizer available in the UI.
 - **Applying Mutations**: Handling the logic for randomizing settings when "Mutate" mode is active (`applyMutations`).
 - **Updating UI Controls**: Synchronizing a setting's value back to its UI control, for example, after a mutation (`updateUIControl`).
+- **Visual Feedback**: Providing consistent highlighting when mutations occur (`highlightMutatedControl`).
 
 **IMPORTANT**: The VisualizerRegistry does not create the HTML for your settings panel. That is the responsibility of your visualizer class.
 
@@ -41,7 +42,7 @@ this.canvas           = null  // Canvas element
 this.elements         = null  // UI elements object
 this.mutationEnabled  = false // Mutation mode state
 this.mutationTimer    = 0     // Mutation timing counter
-this.mutationInterval = 300   // Frames between mutations
+this.mutationInterval = 300   // Frames between mutations (5 seconds at 60fps)
 ```
 
 ## Required Methods
@@ -92,6 +93,41 @@ These methods are crucial for building your visualizer's unique settings panel:
 
 This static method must return an object describing all the settings for your visualizer. This schema is used to build the UI and handle mutations.
 
+**IMPORTANT: Auto-Mutate Support**
+To support the auto-mutation feature, your settings schema MUST include a `mutateMode` checkbox:
+
+```javascript
+mutateMode: {
+  type: 'checkbox',
+  label: 'Auto-Mutate',
+  default: false
+}
+```
+
+### `static getMutationSettings()`
+
+**REQUIRED for mutation support.** This static method defines which settings can be randomized when auto-mutation is active. Return an object where each key matches a setting from your schema, with mutation rules:
+
+```javascript
+static getMutationSettings() {
+  return {
+    colorScheme: {
+      probability: 0.4,  // 40% chance this setting will mutate
+      values: ['red', 'blue', 'green']  // Random selection from array
+    },
+    size: {
+      probability: 0.3,
+      range: { min: 10, max: 100 }  // Random value within range
+    },
+    enabled: {
+      probability: 0.2,
+      values: [true, false],
+      bias: 0.7  // 70% chance of true when this setting mutates
+    }
+  };
+}
+```
+
 ### `setSetting(key, value)`
 
 A single method that acts as a setter for all your visualizer's properties. It takes a key (the setting name) and the new value.
@@ -105,6 +141,49 @@ A single method that acts as a setter for all your visualizer's properties. It t
 
 - **Responsibility**: This method creates the HTML for a single setting item.
 - **Implementation**: Based on the `setting.type` (e.g., 'range', 'checkbox'), it must create the necessary DOM elements (label, input, etc.), attach event listeners, and return the complete HTML element for that setting.
+
+**CRITICAL: Special handling for mutateMode checkbox**
+The `mutateMode` setting requires special event handling. In your checkbox case:
+
+```javascript
+case 'checkbox':
+  input = document.createElement('input');
+  input.type = 'checkbox';
+  input.id = key;
+  input.checked = setting.default;
+
+  // Special handling for mutateMode
+  if (key === 'mutateMode') {
+    const statusSpan = document.createElement('span');
+    statusSpan.className = 'mutation-status';
+    statusSpan.style.cssText = 'font-size: 11px; margin-left: 5px;';
+    statusSpan.textContent = setting.default ? ' 🎲 ACTIVE' : '';
+    statusSpan.style.color = setting.default ? '#6366f1' : '';
+    statusSpan.style.fontWeight = setting.default ? 'bold' : '';
+    item.appendChild(statusSpan);
+  }
+
+  input.addEventListener('change', (e) => {
+    if (key === 'mutateMode') {
+      this.mutationEnabled = e.target.checked;
+      this.mutationTimer = 0;
+      console.log('Mutation mode:', this.mutationEnabled ? 'ON' : 'OFF');
+      
+      // Update visual status indicator
+      const statusSpan = item.querySelector('.mutation-status');
+      if (statusSpan) {
+        statusSpan.textContent = this.mutationEnabled ? ' 🎲 ACTIVE' : '';
+        statusSpan.style.color = this.mutationEnabled ? '#6366f1' : '';
+        statusSpan.style.fontWeight = this.mutationEnabled ? 'bold' : '';
+      }
+    } else {
+      this.setSetting(key, e.target.checked);
+    }
+  });
+
+  item.appendChild(input);
+  break;
+```
 
 ## Standardized Framework Methods
 
@@ -159,10 +238,11 @@ if (window.VisualizerRegistry) {
 
 ## Definitive Example: bars.viz.js
 
-When in doubt, the implementation in the `bars.viz.js` example file is the definitive, working guide. It correctly implements all the required methods, including the settings UI construction.
+When in doubt, the implementation of `bars.viz.js` (below) is the definitive, working guide. It correctly implements all the required methods, including the settings UI construction and auto-mutation support.
 
 ```javascript
 class BarsVisualizer {
+  // Everything is in this class
   constructor() {
     this.bars = 64;
     this.barWidth = 0;
@@ -460,60 +540,19 @@ class BarsVisualizer {
   }
   
   highlightMutatedControl(element, key) {
-    // Briefly highlight control that mutated
-    const settingItem = element.closest('.setting-item');
-    if (!settingItem) return;
-    
-    // Add mutation highlight class
-    settingItem.classList.add('mutated');
-    
-    // Create a brief flash effect
-    settingItem.style.background = 'rgba(99, 102, 241, 0.3)';
-    settingItem.style.borderRadius = '4px';
-    settingItem.style.transition = 'all 0.3s ease';
-    
-    // Show mutation indicator
-    let indicator = settingItem.querySelector('.mutation-indicator');
-    if (!indicator) {
-      indicator = document.createElement('span');
-      indicator.className = 'mutation-indicator';
-      indicator.textContent = '🎲';
-      indicator.style.cssText = `
-        margin-left: 8px;
-        opacity: 0;
-        transition: opacity 0.3s ease;
-        font-size: 12px;
-      `;
-      settingItem.appendChild(indicator);
-    }
-    
-    // Animate the indicator
-    indicator.style.opacity = '1';
-    
-    // Remove effects after delay
-    setTimeout(() => {
-      settingItem.style.background = '';
-      if (indicator) {
-        indicator.style.opacity = '0';
-      }
-    }, 1000);
-    
-    // Remove indicator after animation
-    setTimeout(() => {
-      settingItem.classList.remove('mutated');
-      if (indicator && indicator.parentNode) {
-        indicator.parentNode.removeChild(indicator);
-      }
-    }, 1300);
+    // Highlight mutations
+    window.VisualizerRegistry.highlightMutatedControl(this, element, key);
   }
   
   resetVisualizerSettings() {
     // Reset settings after giving the DOM time
+    // Keep this function as is — it should not require changing
     setTimeout(() => window.VisualizerRegistry.resetToDefaults(this), 10);
   }
   
   toggleSettings() {
     // Toggle settings
+    // Keep this function as is — it should not require changing
     if (this.elements && this.elements.settingsPanel) {
       this.elements.settingsPanel.classList.toggle('hidden');
     }
@@ -521,6 +560,7 @@ class BarsVisualizer {
   
   closeSettings() {
     // Close settings
+    // Keep this function as is — it should not require changing
     if (this.elements && this.elements.settingsPanel) {
       this.elements.settingsPanel.classList.add('hidden');
     }
@@ -534,7 +574,7 @@ class BarsVisualizer {
   static getSettingsSchema() {
     // Return the schema
     return {
-      name: 'Bars and Bars',
+      name: 'Bar and Bars',
       settings: {
         barCount: {
           type: 'range',
@@ -604,7 +644,7 @@ class BarsVisualizer {
         },
         mutateMode: {
           type: 'checkbox',
-          label: 'Mutate Colors',
+          label: 'Auto Mutate',
           default: false
         }
       }
@@ -835,7 +875,7 @@ class BarsVisualizer {
   }
   
   setSmoothing(value) {
-    // Smoothing value
+    // SMoothing value
     this.smoothing = Math.max(0, Math.min(0.95, value));
   }
   
@@ -871,4 +911,4 @@ if (window.VisualizerRegistry) {
 
 ---
 
-This specification provides everything needed to create new visualizers for the VizWiz system. The key is following the patterns established in the `bars.viz.js` example, particularly for UI construction and framework integration.
+This specification provides everything needed to create new visualizers for the VizWiz system. The key is following the patterns established in the `bars.viz.js` example, particularly for UI construction, framework integration, and auto-mutation implementation.

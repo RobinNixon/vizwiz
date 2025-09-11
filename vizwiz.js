@@ -381,7 +381,7 @@ class VizWiz {
       this.handleKeyboardShortcuts(e);
     });
   }
-  
+
   toggleVisualizer(enabled) {
       console.log('toggleVisualizer called with:', enabled);
       this.visualizerEnabled = enabled;
@@ -2506,6 +2506,45 @@ window.VisualizerRegistry = {
     };
   },
   
+  // Add this to window.VisualizerRegistry in vizwiz.js
+  highlightMutatedControl(visualizer, element, key) {
+    const settingItem = element.closest('.setting-item');
+    if (!settingItem) return;
+    
+    settingItem.classList.add('mutated');
+    settingItem.style.background = 'rgba(99, 102, 241, 0.3)';
+    settingItem.style.borderRadius = '4px';
+    settingItem.style.transition = 'all 0.3s ease';
+    
+    let indicator = settingItem.querySelector('.mutation-indicator');
+    if (!indicator) {
+      indicator = document.createElement('span');
+      indicator.className = 'mutation-indicator';
+      indicator.textContent = '🎲';
+      indicator.style.cssText = `
+        margin-left: 8px;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        font-size: 12px;
+      `;
+      settingItem.appendChild(indicator);
+    }
+    
+    indicator.style.opacity = '1';
+    
+    setTimeout(() => {
+      settingItem.style.background = '';
+      if (indicator) indicator.style.opacity = '0';
+    }, 1000);
+    
+    setTimeout(() => {
+      settingItem.classList.remove('mutated');
+      if (indicator && indicator.parentNode) {
+        indicator.parentNode.removeChild(indicator);
+      }
+    }, 1300);
+  },
+
   /**
    * Reset visualizer settings to defaults
    */

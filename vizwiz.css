@@ -364,10 +364,6 @@ body {
     }
 }
 
-.settings-footer {
-    margin: auto;
-    width: 50%;
-}
 
 .hidden {
     display: none;
@@ -448,8 +444,8 @@ body {
     gap: 10px;
     justify-content: space-between;
     align-items: center;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    margin-top: 20px;
+    margin: auto;
+    width: 50%;
 }
 
 .settings-footer .btn {

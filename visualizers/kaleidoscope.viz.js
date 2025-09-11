@@ -1,13 +1,3 @@
-/**
- * VizWiz Kaleidoscope Visualizer Plugin
- * 
- * Creates beautiful kaleidoscopic patterns with animated objects that fall and bounce
- * around the screen. The kaleidoscope rotates and reflects everything in symmetrical
- * patterns, creating mesmerizing visual effects that respond to audio.
- * 
- * See vizwiz.txt for complete development guide.
- */
-
 class KaleidoscopeVisualizer {
   constructor() {
     this.segments = 8;
@@ -237,7 +227,7 @@ class KaleidoscopeVisualizer {
     for (let i = 0; i < this.dataArray.length; i++) {
       sum += this.dataArray[i];
     }
-    this.audioLevel = (sum / this.dataArray.length / 255) * this.audioSensitivity;
+    this.audioLevel = (sum / this.dataArray.length / 255) * this.audioSensitivity ;
     
     this.audioHistory.shift();
     this.audioHistory.push(this.audioLevel);
@@ -571,43 +561,7 @@ class KaleidoscopeVisualizer {
   }
   
   highlightMutatedControl(element, key) {
-    const settingItem = element.closest('.setting-item');
-    if (!settingItem) return;
-    
-    settingItem.classList.add('mutated');
-    settingItem.style.background = 'rgba(99, 102, 241, 0.3)';
-    settingItem.style.borderRadius = '4px';
-    settingItem.style.transition = 'all 0.3s ease';
-    
-    let indicator = settingItem.querySelector('.mutation-indicator');
-    if (!indicator) {
-      indicator = document.createElement('span');
-      indicator.className = 'mutation-indicator';
-      indicator.textContent = '🎲';
-      indicator.style.cssText = `
-        margin-left: 8px;
-        opacity: 0;
-        transition: opacity 0.3s ease;
-        font-size: 12px;
-      `;
-      settingItem.appendChild(indicator);
-    }
-    
-    indicator.style.opacity = '1';
-    
-    setTimeout(() => {
-      settingItem.style.background = '';
-      if (indicator) {
-        indicator.style.opacity = '0';
-      }
-    }, 1000);
-    
-    setTimeout(() => {
-      settingItem.classList.remove('mutated');
-      if (indicator && indicator.parentNode) {
-        indicator.parentNode.removeChild(indicator);
-      }
-    }, 1300);
+    window.VisualizerRegistry.highlightMutatedControl(this, element, key);
   }
   
   resetVisualizerSettings() {
@@ -871,7 +825,7 @@ class KaleidoscopeVisualizer {
         },
         mutateMode: {
           type: 'checkbox',
-          label: 'Mutate Effects',
+          label: 'Auto Mutate',
           default: false
         }
       }

@@ -57,5 +57,26 @@ window.VisualizerManifest = [
     file: 'plasma.viz.js',
     author: 'Claude Sonnet 4',
     description: 'Flowing plasma effects with smooth color transitions'
+  },
+  {
+    id: 'nbody',
+    name: 'N-Body Cosmos',
+    file: 'nbody.viz.js',
+    author: 'Grok 4',
+    description: 'N-Body physics simulation'
+  },
+  {
+    id: 'bloom',
+    name: 'Vector Bloom',
+    file: 'bloom.viz.js',
+    author: 'Copilot',
+    description: 'Generative, node-based bloom field that reacts to frequency clusters'
+  },
+  {
+    id: 'hyper',
+    name: 'Hyper Bloom',
+    file: 'hyper.viz.js',
+    author: 'Copilot',
+    description: 'Folding, rotating, pulsating tesseract'
   }
 ];

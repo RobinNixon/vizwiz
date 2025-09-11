@@ -423,7 +423,7 @@ class GrooveVisualizer {
         },
         mutateMode: {
           type: 'checkbox',
-          label: 'Mutate Mode',
+          label: 'Auto Mutate',
           default: false
         }
       }
@@ -494,34 +494,7 @@ class GrooveVisualizer {
   }
 
   highlightMutatedControl(element, key) {
-    const settingItem = element.closest('.setting-item');
-    if (!settingItem) return;
-    settingItem.classList.add('mutated');
-    settingItem.style.background = 'rgba(99, 102, 241, 0.3)';
-    settingItem.style.borderRadius = '4px';
-    settingItem.style.transition = 'all 0.3s ease';
-
-    let indicator = settingItem.querySelector('.mutation-indicator');
-    if (!indicator) {
-      indicator = document.createElement('span');
-      indicator.className = 'mutation-indicator';
-      indicator.textContent = '🌀';
-      indicator.style.cssText = 'margin-left: 8px; opacity: 0; transition: opacity 0.3s ease; font-size: 12px;';
-      settingItem.appendChild(indicator);
-    }
-    indicator.style.opacity = '1';
-
-    setTimeout(() => {
-      settingItem.style.background = '';
-      if (indicator) indicator.style.opacity = '0';
-    }, 1000);
-
-    setTimeout(() => {
-      settingItem.classList.remove('mutated');
-      if (indicator && indicator.parentNode) {
-        indicator.parentNode.removeChild(indicator);
-      }
-    }, 1300);
+    window.VisualizerRegistry.highlightMutatedControl(this, element, key);
   }
 }
 

@@ -1,13 +1,3 @@
-/**
- * VizWiz Fractal Dreams Visualizer Plugin
- * * Creates evolving, fractal-like patterns using simple recursive rules.
- * The audio input drives the growth, branching, and visual properties
- * of the structures, creating a dynamic, organic visual experience.
- *
- * This visualizer avoids heavy computation by limiting recursion depth
- * and using simple shapes, giving the impression of complexity.
- * * See vizwiz.txt for complete development guide.
- */
 class FractalVisualizer {
   constructor() {
     // --- User-configurable settings with defaults ---
@@ -282,23 +272,8 @@ class FractalVisualizer {
     this.fractals = []; // Also clear fractals on reset
   }
 
-  // Visual feedback for mutated controls
   highlightMutatedControl(element, key) {
-    const settingItem = element.closest('.setting-item');
-    if (!settingItem) return;
-
-    settingItem.style.background = 'rgba(99, 102, 241, 0.3)';
-    settingItem.style.transition = 'background 0.3s ease';
-    
-    const indicator = document.createElement('span');
-    indicator.textContent = '🎲';
-    indicator.style.cssText = 'margin-left: 8px; font-size: 12px;';
-    settingItem.appendChild(indicator);
-
-    setTimeout(() => {
-        settingItem.style.background = '';
-        settingItem.removeChild(indicator);
-    }, 1000);
+    window.VisualizerRegistry.highlightMutatedControl(this, element, key);
   }
 
   // REQUIRED UI methods (can be boilerplate)
@@ -453,7 +428,7 @@ class FractalVisualizer {
         },
         mutateMode: {
           type: 'checkbox',
-          label: 'Mutate Effects',
+          label: 'Auto Mutate',
           default: false
         }
       }

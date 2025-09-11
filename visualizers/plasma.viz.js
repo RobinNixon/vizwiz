@@ -206,7 +206,7 @@ class PlasmaVisualizer {
     for (let i = 0; i < this.dataArray.length; i++) {
       sum += this.dataArray[i];
     }
-    this.audioLevel = (sum / this.dataArray.length / 255) * this.audioSensitivity;
+    this.audioLevel = (sum / this.dataArray.length / 255) * this.audioSensitivity * 5;
     
     // Update audio history for smoother effects
     this.audioHistory.shift();
@@ -492,50 +492,7 @@ class PlasmaVisualizer {
   }
   
   highlightMutatedControl(element, key) {
-    const settingItem = element.closest('.setting-item');
-    if (!settingItem) return;
-    
-    // Add mutation highlight class
-    settingItem.classList.add('mutated');
-    
-    // Create a brief flash effect
-    settingItem.style.background = 'rgba(99, 102, 241, 0.3)';
-    settingItem.style.borderRadius = '4px';
-    settingItem.style.transition = 'all 0.3s ease';
-    
-    // Show mutation indicator
-    let indicator = settingItem.querySelector('.mutation-indicator');
-    if (!indicator) {
-      indicator = document.createElement('span');
-      indicator.className = 'mutation-indicator';
-      indicator.textContent = '🎲';
-      indicator.style.cssText = `
-        margin-left: 8px;
-        opacity: 0;
-        transition: opacity 0.3s ease;
-        font-size: 12px;
-      `;
-      settingItem.appendChild(indicator);
-    }
-    
-    // Animate the indicator
-    indicator.style.opacity = '1';
-    
-    // Remove effects after delay
-    setTimeout(() => {
-      settingItem.style.background = '';
-      if (indicator) {
-        indicator.style.opacity = '0';
-      }
-    }, 1000);
-    
-    // Remove indicator after animation
-    setTimeout(() => {
-      settingItem.classList.remove('mutated');
-      if (indicator && indicator.parentNode) {
-        indicator.parentNode.removeChild(indicator);
-      }
-    }, 1300);
+    window.VisualizerRegistry.highlightMutatedControl(this, element, key);
   }
   
   resetVisualizerSettings() {
@@ -739,7 +696,7 @@ class PlasmaVisualizer {
         },
         mutateMode: {
           type: 'checkbox',
-          label: 'Mutate Colors',
+          label: 'Auto Mutate',
           default: false
         }
       }

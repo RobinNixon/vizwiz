@@ -154,9 +154,11 @@ vizwiz/
     ├── auto-loader.js        # Auto load visualizers
     ├── bars.viz.js           # Bars and Bars    (Claude Sonnet 4)
     ├── blobs.viz.js          # Blobby Blobs     (Deepseek R1)
+    ├── bloom.viz.js          # Vector Bloom     (Copilot)
     ├── bouncer.viz.js        # Big Bouncer      (Grok 4)
     ├── fractal.viz.js        # Fractal Dreams   (Gemini 2.5 Pro)
     ├── groove.viz.js         # Groovy Groove    (Qwen3-235B-A22B-2507)
+    ├── hyper.viz.js          # Hyper Bloom      (Copilot)
     ├── kaleidoscope.viz.js   # Kaleidoscope     (Claude Sonnet 4)
     ├── oscilloscope.viz.js   # Oscilloscope     (ChatGPT 5 Fast)
     └── plasma.viz.js         # Plasma Flow      (Claude Sonnet 4)
