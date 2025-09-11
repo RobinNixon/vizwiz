@@ -1400,7 +1400,7 @@ class VizWiz {
     this.updatePlaylistUI();
   }
   
-  loadTrackFromPlaylist(index, autoPlay = false) {
+  loadTrackFromPlaylist(index, autoPlay = false, shouldAutoScroll = true) {
     if (index < 0 || index >= this.playlist.length) return;
     
     // Stop current playback and clean up resources
@@ -1433,7 +1433,7 @@ class VizWiz {
       this.showTrackTitleTemporarily();
     }
     
-    // Update playlist UI
+    // Update playlist UI and auto-scroll if requested
     this.updatePlaylistUI();
     
     // Auto-play if requested
@@ -1681,11 +1681,19 @@ class VizWiz {
     this.crossfadeInProgress = false;
   }
   
-  showPlaylistPanel() {
+  showPlaylistPanel(shouldAutoScroll = true) {
     const panel = document.getElementById('playlistPanel');
     if (panel) {
       panel.classList.remove('hidden');
       this.elements.playlistBtn.classList.add('active');
+      
+      // Auto-scroll to current track when panel opens
+      if (shouldAutoScroll && this.playlist.length > 0) {
+        // Wait for panel animation to complete, then scroll
+        setTimeout(() => {
+          this.scrollToCurrentTrack();
+        }, 400); // Increased timeout to ensure animation completes
+      }
     }
   }
   
@@ -1723,16 +1731,25 @@ class VizWiz {
     if (!container || !countSpan) return;
     
     countSpan.textContent = this.playlist.length;
-    container.innerHTML = '';
+    
+    // For very large playlists (>1000 tracks), consider virtual scrolling
+    // But for now, let's optimize the DOM manipulation
+    
+    // Use DocumentFragment for better performance with large lists
+    const fragment = document.createDocumentFragment();
+    let currentTrackElement = null;
     
     this.playlist.forEach((track, index) => {
       const item = document.createElement('div');
       item.className = 'playlist-item';
+      item.dataset.trackIndex = index;
+      
       if (index === this.currentTrackIndex) {
         item.classList.add('current');
         if (this.isPlaying) {
           item.classList.add('playing');
         }
+        currentTrackElement = item;
       }
       
       item.innerHTML = `
@@ -1746,10 +1763,73 @@ class VizWiz {
         </div>
       `;
       
-      container.appendChild(item);
+      fragment.appendChild(item);
     });
+    
+    // Clear and append all at once for better performance
+    container.innerHTML = '';
+    container.appendChild(fragment);
+    
+    // Auto-scroll to current track if playlist panel is visible
+    if (currentTrackElement) {
+      // Use a longer delay for large playlists to ensure DOM is ready
+      setTimeout(() => {
+        this.scrollToCurrentTrack(currentTrackElement);
+      }, 100);
+    }
+  }
+
+  // Enhanced scroll method that works better with very large lists
+  scrollToCurrentTrack(currentTrackElement = null) {
+    const playlistPanel = document.getElementById('playlistPanel');
+    
+    // Only scroll if playlist panel is visible
+    if (!playlistPanel || playlistPanel.classList.contains('hidden')) {
+      return;
+    }
+    
+    // Find current track element if not provided
+    if (!currentTrackElement) {
+      const container = document.getElementById('playlistItems');
+      if (!container) return;
+      currentTrackElement = container.querySelector(`[data-track-index="${this.currentTrackIndex}"]`);
+    }
+    
+    if (!currentTrackElement) return;
+    
+    // For large playlists, scrollIntoView works better than manual calculation
+    try {
+      currentTrackElement.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+        inline: 'nearest'
+      });
+      // console.log('Scrolled track', this.currentTrackIndex, 'into view');
+    } catch (error) {
+      // Fallback for older browsers
+      console.log('scrollIntoView failed, trying manual scroll');
+      const container = currentTrackElement.closest('.playlist-content') || 
+                       currentTrackElement.closest('#playlistPanel');
+      if (container) {
+        container.scrollTop = currentTrackElement.offsetTop - (container.clientHeight / 2);
+      }
+    }
   }
   
+  jumpToTrack() {
+    if (this.playlist.length === 0) return;
+    
+    const trackNumber = prompt(`Jump to track (1-${this.playlist.length}):`);
+    const index = parseInt(trackNumber) - 1;
+    
+    if (index >= 0 && index < this.playlist.length) {
+      this.loadTrackFromPlaylist(index, false); // Don't auto-play
+      this.scrollToCurrentTrack(); // Scroll to the selected track
+    } else {
+      alert(`Please enter a number between 1 and ${this.playlist.length}`);
+    }
+  }
+
   removeFromPlaylist(index) {
     if (index < 0 || index >= this.playlist.length) return;
     
