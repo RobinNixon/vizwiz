@@ -1,14 +1,38 @@
-VizWiz Visualizer 1.0 Specification
+# VizWiz Visualizer 1.3 Specification
 
 A modular, browser-based music visualizer with a plugin architecture
 
-Transform your music into stunning visual experiences! VizWiz is a lightweight, entirely client-side music visualizer that runs directly in your browser. Drop in audio files and watch them come alive with reactive visual effects.
+Transform your music into stunning visual experiences! VizWiz is a lightweight, entirely client-side music visualizer that runs directly in your browser. Drop in audio files and watch them come alive with reactive visual effects. This document details how to create new visualizer plugins for the VizWiz environment.
 
-To create your own visualization plug-ins, where vizname is the ID of your visualizer, you will need to incorporate at least the following functions in order to operate cleanly within the VizWiz environment. At the end of this file is an example of a working visualizer. Follow it's structure if in doubt. To make good use of high resolution displays employ devicePixelRatio in your rendering code.
+## Key Concepts
 
-REQUIRED PROPERTIES
-===================
+### 1. Plugin Architecture
 
+Each visualizer is a self-contained JavaScript class. This class handles all of its own rendering logic and settings management.
+
+### 2. The VisualizerRegistry Object
+
+The global `window.VisualizerRegistry` object serves as the bridge between your visualizer and the main application. Its primary roles are:
+
+- **Registration**: Making your visualizer available in the UI.
+- **Applying Mutations**: Handling the logic for randomizing settings when "Mutate" mode is active (`applyMutations`).
+- **Updating UI Controls**: Synchronizing a setting's value back to its UI control, for example, after a mutation (`updateUIControl`).
+
+**IMPORTANT**: The VisualizerRegistry does not create the HTML for your settings panel. That is the responsibility of your visualizer class.
+
+### 3. The Visualizer Class
+
+Your class is responsible for:
+
+- All rendering to the canvas.
+- Defining its own unique settings via a static `getSettingsSchema()` method.
+- Building its own HTML settings panel based on that schema. The `bars.viz.js` file provides the definitive implementation pattern to follow.
+
+## Required Properties
+
+Your visualizer class must include the following properties:
+
+```javascript
 this.animationId      = null  // For requestAnimationFrame
 this.analyser         = null  // Web Audio analyser node
 this.dataArray        = null  // Frequency data buffer
@@ -17,119 +41,128 @@ this.canvas           = null  // Canvas element
 this.elements         = null  // UI elements object
 this.mutationEnabled  = false // Mutation mode state
 this.mutationTimer    = 0     // Mutation timing counter
-this.mutationInterval = 200   // Frames between mutations
+this.mutationInterval = 300   // Frames between mutations
+```
 
-REQUIRED METHODS
-================
+## Required Methods
 
-class viznameVisualizer
-{
-  // Write these functions according to requirements
+Your visualizer class must implement the following methods:
 
-  constructor() {
-    // Construct the class
-  }
+### `constructor()`
 
-  init(elements) {
-    // Initialize elements
-    // Call the following once initialised to ensure settings display correctly
-    this.resetVisualizerSettings();
-  }
+Initialize all default properties and settings for your visualizer.
 
-  static getSettingsSchema() {
-    // Return the schema
-  }
+### `init(elements)`
 
-  setSetting(key, value) {
-    // Set various settings
-  }
+- Called once when the visualizer is loaded.
+- Receives an elements object containing references to shared DOM elements.
+- This is where you should call `this.buildVisualizerSettings()` to create your UI.
 
-  createSettingItem(key, setting) {
-    // Create a setting item
-  }
+### `startVisualization(analyser, dataArray, ctx, canvas)`
 
-  animate() {
-    // Animation loop
-    // When supporting mutation, check also for the global flag
-    //   window.VisualizerRegistry?.globalMutationEnabled
-    // Which is a mutation override forcing all visualizers to mutate
-  }
+- Called when playback begins.
+- Receives all necessary components from the Web Audio API and the DOM.
+- Your `animate()` loop should be started here.
 
-  render(ctx, dataArray, width, height) {
-    // Render to canvas
-  }
+### `stopVisualization()`
 
-  startVisualization(analyser, dataArray, ctx, canvas) {
-    // Start visualization
-  }
+- Called when playback stops.
+- Should cancel the requestAnimationFrame loop.
 
-  stopVisualization() {
-    // Stop visualisation
-  }
+### `animate()`
 
-  buildVisualizerSettings() {
-    // Build settings HTML
-  }
+- The main animation loop, called every frame via requestAnimationFrame.
+- Should fetch the latest frequency data from the analyser.
+- Handles mutation timing.
+- Calls the `render()` method.
 
-  static getMutationSettings() {
-    // Return mutatable settings object
-    // You should not allow any sensitivity to be mutated
-    // as your visualizer may appear to stop working
-  }
+### `render(ctx, dataArray, width, height)`
 
-  highlightMutatedControl(element, key) {
-    // Temporarily highlight the element that has changed
-  }
+Contains the core drawing logic for your visualizer for a single frame.
 
-  onCanvasResize(width, height) {
-    // If necessary take resize action
-  }
+### `onCanvasResize(width, height)`
 
-  mutateSettings() {
-    // Apply mutations
-    // Keep this function as is — it should not require changing
-    window.VisualizerRegistry.applyMutations(this);
-  }
+An optional method that is called when the canvas is resized. Use this to recalculate any size-dependent properties.
 
-  updateUIControl(key, newValue, highlight = false) {
-    // Update the UI
-    // Keep this function as is — it should not require changing
-    window.VisualizerRegistry.updateUIControl(this, key, newValue, highlight);
-  }
+## Settings and UI Methods
 
-  resetVisualizerSettings() {
-    // Reset settings after giving time for DOM catchup
-    // Keep this function as is — it should not require changing
-    setTimeout(() => window.VisualizerRegistry.resetToDefaults(this), 10);
-  }
-  
-  toggleSettings() {
-    // Toggle settings
-    // Keep this function as is — it should not require changing
-    if (this.elements && this.elements.settingsPanel) {
-      this.elements.settingsPanel.classList.toggle('hidden');
-    }
-  }
-  
-  closeSettings() {
-    // Close settings
-    // Keep this function as is — it should not require changing
-    if (this.elements && this.elements.settingsPanel) {
-      this.elements.settingsPanel.classList.add('hidden');
-    }
+These methods are crucial for building your visualizer's unique settings panel:
+
+### `static getSettingsSchema()`
+
+This static method must return an object describing all the settings for your visualizer. This schema is used to build the UI and handle mutations.
+
+### `setSetting(key, value)`
+
+A single method that acts as a setter for all your visualizer's properties. It takes a key (the setting name) and the new value.
+
+### `buildVisualizerSettings()`
+
+- **Responsibility**: This method builds the entire HTML settings panel.
+- **Implementation**: It should get the schema from `this.constructor.getSettingsSchema()`, clear the settings container, and then loop through each setting, calling `createSettingItem()` for each one and appending the result to the DOM.
+
+### `createSettingItem(key, setting)`
+
+- **Responsibility**: This method creates the HTML for a single setting item.
+- **Implementation**: Based on the `setting.type` (e.g., 'range', 'checkbox'), it must create the necessary DOM elements (label, input, etc.), attach event listeners, and return the complete HTML element for that setting.
+
+## Standardized Framework Methods
+
+The following methods interact directly with the VisualizerRegistry. They contain standard boilerplate logic and should be included in your class exactly as they appear below to ensure compatibility with the framework:
+
+```javascript
+mutateSettings() {
+  // Applies random mutations to your settings.
+  window.VisualizerRegistry.applyMutations(this);
+}
+
+updateUIControl(key, newValue, highlight = false) {
+  // Updates a UI control's value in the DOM.
+  window.VisualizerRegistry.updateUIControl(this, key, newValue, highlight);
+}
+
+highlightMutatedControl(element, key) {
+  // Briefly highlights a control that was changed by a mutation.
+  window.VisualizerRegistry.highlightMutatedControl(this, element, key);
+}
+
+resetVisualizerSettings() {
+  // Resets all settings to their default values.
+  setTimeout(() => window.VisualizerRegistry.resetToDefaults(this), 10);
+}
+
+toggleSettings() {
+  // Shows or hides the settings panel.
+  if (this.elements && this.elements.settingsPanel) {
+    this.elements.settingsPanel.classList.toggle('hidden');
   }
 }
 
+closeSettings() {
+  // Ensures the settings panel is hidden.
+  if (this.elements && this.elements.settingsPanel) {
+    this.elements.settingsPanel.classList.add('hidden');
+  }
+}
+```
+
+## Registration
+
+Finally, you must register your class with the VisualizerRegistry so the application can find it. Add this snippet at the end of your file, replacing the details with your own:
+
+```javascript
 if (window.VisualizerRegistry) {
-  // Register the visualizer - adapt accordingly
-  window.VisualizerRegistry.register('newviz', 'New Visualizer', NewvizVisualizer);
+  // ID ... Display Name ... Class Name
+  window.VisualizerRegistry.register('myviz', 'My Awesome Visualizer', MyVizClass);
 }
+```
 
-EXAMPLE VISUALIZER: bars.viz.js
-===============================
+## Definitive Example: bars.viz.js
 
+When in doubt, the implementation in the `bars.viz.js` example file is the definitive, working guide. It correctly implements all the required methods, including the settings UI construction.
+
+```javascript
 class BarsVisualizer {
-  // Everything is in this class
   constructor() {
     this.bars = 64;
     this.barWidth = 0;
@@ -476,13 +509,11 @@ class BarsVisualizer {
   
   resetVisualizerSettings() {
     // Reset settings after giving the DOM time
-    // Keep this function as is — it should not require changing
     setTimeout(() => window.VisualizerRegistry.resetToDefaults(this), 10);
   }
   
   toggleSettings() {
     // Toggle settings
-    // Keep this function as is — it should not require changing
     if (this.elements && this.elements.settingsPanel) {
       this.elements.settingsPanel.classList.toggle('hidden');
     }
@@ -490,7 +521,6 @@ class BarsVisualizer {
   
   closeSettings() {
     // Close settings
-    // Keep this function as is — it should not require changing
     if (this.elements && this.elements.settingsPanel) {
       this.elements.settingsPanel.classList.add('hidden');
     }
@@ -504,7 +534,7 @@ class BarsVisualizer {
   static getSettingsSchema() {
     // Return the schema
     return {
-      name: 'Bar and Bars',
+      name: 'Bars and Bars',
       settings: {
         barCount: {
           type: 'range',
@@ -584,7 +614,6 @@ class BarsVisualizer {
   static getMutationSettings() {
     // Return mutatable settings object
     // Don't allow sensitivity to be mutated
-
     return {
       colorScheme: {
         probability: 0.6,
@@ -806,7 +835,7 @@ class BarsVisualizer {
   }
   
   setSmoothing(value) {
-    // SMoothing value
+    // Smoothing value
     this.smoothing = Math.max(0, Math.min(0.95, value));
   }
   
@@ -838,3 +867,8 @@ if (window.VisualizerRegistry) {
    // Register visualizer
    window.VisualizerRegistry.register('bars', 'Bars and Bars', BarsVisualizer);
 }
+```
+
+---
+
+This specification provides everything needed to create new visualizers for the VizWiz system. The key is following the patterns established in the `bars.viz.js` example, particularly for UI construction and framework integration.

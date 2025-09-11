@@ -103,7 +103,7 @@ Perfect for radio DJs and live events:
 One of the best things about VizWiz is how easy it is to add new effects.  
 You don't need to be a coder — you can create visualizers by **chatting with an AI**.
 
-1. Copy and paste or drag and drop the `vizwiz.txt` file (included in this project) into a chat with your favorite AI assistant.  
+1. Copy and paste or drag and drop the `vizwiz.md` file (included in this project) into a chat with your favorite AI assistant.  
 2. Describe in as much detail as you can what kind of visualizer you'd like (spirals, flames, galaxies, anything you can imagine).
 3. The AI will give you back a `.viz.js` file (or if you are a coder write your own).
 4. Save that file into the `visualizers/` folder.  
@@ -144,7 +144,7 @@ vizwiz/
 ├── index.html                # Main HTML application
 ├── vizwiz.js                 # Core JavaScript engine
 ├── vizwiz.css                # CSS Styling
-├── vizwiz.txt                # Visualizer development guide
+├── vizwiz.md                 # Visualizer development guide
 ├── readme.md                 # This readme file
 ├── vizwiz.png                # Favicon
 ├── visualizer-helper.html    # Web-based helper for adding visualizers
@@ -241,6 +241,6 @@ vizwiz/
 This project is licensed under the MIT License
 
 ## 🚀 Quick Links
-- 📖 [Visualizer Development Guide](vizwiz.txt)
+- 📖 [Visualizer Development Guide](vizwiz.md)
 - 🛠 [Report Issues](https://github.com/RobinNixon/vizwiz/issues)
 - 💡 [Feature Requests](https://github.com/RobinNixon/vizwiz/discussions)

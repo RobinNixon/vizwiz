@@ -34,6 +34,10 @@ class PlasmaVisualizer {
     this.width = 0;
     this.height = 0;
     
+    // Add smoothing buffers
+    this.previousPlasmaBuffer = null;
+    this.temporalSmoothing = 0.15; // Blend with previous frame
+
     this.colorSchemes = {
       plasma: {
         name: 'Classic Plasma',
@@ -169,6 +173,7 @@ class PlasmaVisualizer {
     // Initialize plasma buffer if needed
     if (!this.plasmaBuffer || this.plasmaBuffer.length !== this.width * this.height) {
       this.plasmaBuffer = new Float32Array(this.width * this.height);
+      this.previousPlasmaBuffer = new Float32Array(this.width * this.height);
     }
   }
   
@@ -230,7 +235,7 @@ class PlasmaVisualizer {
   }
   
   calculatePlasma() {
-    const audioBoost = 1 + this.audioLevel * 2;
+    const audioBoost = 1 + this.audioLevel * 0.5; // Reduced from * 2 to reduce chaos
     const turbMod = this.turbulence * audioBoost;
     
     for (let y = 0; y < this.height; y++) {
@@ -244,35 +249,44 @@ class PlasmaVisualizer {
         // Multiple wave sources for complex patterns
         let value = 0;
         
-        // Primary waves
+        // Primary waves - smoother and more coherent
         for (let w = 0; w < this.waveCount; w++) {
           const waveOffset = (w * Math.PI * 2) / this.waveCount;
-          const timeOffset = this.time + waveOffset;
+          const timeOffset = this.time * 0.5 + waveOffset; // Slower time progression
           
-          // Circular waves from different points
+          // Smoother circular waves from different points
+          const centerX = Math.sin(timeOffset * 0.1) * 0.2; // Slower, smaller movement
+          const centerY = Math.cos(timeOffset * 0.08) * 0.2;
+          
           const dist1 = Math.sqrt(
-            Math.pow(nx - Math.sin(timeOffset * 0.3) * 0.3, 2) +
-            Math.pow(ny - Math.cos(timeOffset * 0.2) * 0.3, 2)
+            Math.pow(nx - centerX, 2) +
+            Math.pow(ny - centerY, 2)
           );
           
           const dist2 = Math.sqrt(
-            Math.pow(nx + Math.sin(timeOffset * 0.4) * 0.2, 2) +
-            Math.pow(ny + Math.cos(timeOffset * 0.3) * 0.2, 2)
+            Math.pow(nx + centerX * 0.7, 2) +
+            Math.pow(ny + centerY * 0.7, 2)
           );
           
-          // Create interference patterns
-          value += Math.sin(dist1 * 20 * turbMod + timeOffset * 2);
-          value += Math.sin(dist2 * 15 * turbMod + timeOffset * 1.5);
+          // Create smoother interference patterns
+          const freq1 = 8 * turbMod; // Reduced frequency for smoother waves
+          const freq2 = 6 * turbMod;
           
-          // Add linear waves for complexity
-          value += Math.sin(nx * 10 * turbMod + timeOffset);
-          value += Math.sin(ny * 8 * turbMod + timeOffset * 0.8);
+          value += Math.sin(dist1 * freq1 + timeOffset) * 0.5;
+          value += Math.sin(dist2 * freq2 + timeOffset * 0.8) * 0.3;
+          
+          // Add smoother linear waves
+          value += Math.sin(nx * 4 * turbMod + timeOffset * 0.6) * 0.2;
+          value += Math.sin(ny * 3 * turbMod + timeOffset * 0.4) * 0.2;
         }
         
-        // Add audio-reactive turbulence
+        // Smoother audio-reactive turbulence
         const audioIndex = Math.floor((x / this.width) * this.dataArray.length);
         const audioValue = this.dataArray[audioIndex] / 255;
-        value += Math.sin(audioValue * 10 + this.time * 3) * this.audioLevel;
+        
+        // Apply smoothing to audio input to reduce jitter
+        const smoothedAudio = this.audioLevel * 0.3 + audioValue * 0.1; // Much gentler
+        value += Math.sin(smoothedAudio * 5 + this.time) * 0.15; // Reduced impact
         
         // Apply symmetry if enabled
         if (this.symmetry) {
@@ -284,6 +298,18 @@ class PlasmaVisualizer {
         }
         
         this.plasmaBuffer[index] = value;
+      }
+ 
+      // Apply temporal smoothing to reduce jitter
+      if (this.previousPlasmaBuffer) {
+        for (let i = 0; i < this.plasmaBuffer.length; i++) {
+          this.plasmaBuffer[i] = 
+            this.previousPlasmaBuffer[i] * this.temporalSmoothing +
+            this.plasmaBuffer[i] * (1 - this.temporalSmoothing);
+        }
+        
+        // Copy current to previous for next frame
+        this.previousPlasmaBuffer.set(this.plasmaBuffer);
       }
     }
   }
